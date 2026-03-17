@@ -342,8 +342,38 @@ aside {
 .kpi:nth-child(3){animation-delay:.12s}.kpi:nth-child(4){animation-delay:.16s}
 .kpi:nth-child(5){animation-delay:.20s}.kpi:nth-child(6){animation-delay:.24s}
 
-/* SCROLLBAR */
-::-webkit-scrollbar{width:5px;height:5px;}
+/* CHAT STYLES */
+.msg-bot, .msg-user { display:flex; }
+.msg-user { justify-content:flex-end; }
+.msg-bubble {
+  max-width:80%;padding:11px 15px;border-radius:14px;
+  font-size:13px;line-height:1.6;
+}
+.msg-bubble.bot {
+  background:var(--s2);color:var(--text);
+  border:1px solid var(--border);border-bottom-left-radius:4px;
+}
+.msg-bubble.user {
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  color:#fff;border-bottom-right-radius:4px;
+}
+.msg-bubble.thinking {
+  background:var(--s2);color:var(--text3);
+  border:1px solid var(--border);border-bottom-left-radius:4px;
+  font-style:italic;
+}
+.sug-btn {
+  background:var(--s2);border:1px solid var(--border);
+  color:var(--text2);padding:9px 12px;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:12px;
+  cursor:pointer;text-align:left;transition:all 0.2s;line-height:1.4;
+}
+.sug-btn:hover{border-color:var(--blue);color:var(--text);}
+
+/* SCROLLBAR chat */
+#chat-messages::-webkit-scrollbar{width:4px;}
+#chat-messages::-webkit-scrollbar-thumb{background:var(--s3);border-radius:4px;}
+
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--s3);border-radius:4px;}
 </style>
@@ -381,6 +411,11 @@ aside {
     <div class="nav-item" onclick="navigate('financiero',this)">
       <span class="nav-icon">💰</span> Financiero
       <span class="nav-badge" id="badge-mora">—</span>
+    </div>
+    <div class="nav-section-label">Inteligencia Artificial</div>
+    <div class="nav-item" onclick="navigate('agente',this)">
+      <span class="nav-icon">🤖</span> Asesor IA
+      <span class="nav-badge blue">NEW</span>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -627,6 +662,89 @@ aside {
       </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════
+         VIEW: ASESOR IA
+    ══════════════════════════════════════════════ -->
+    <div class="view" id="view-agente">
+      <div class="sec">Asesor Inteligente</div>
+
+      <!-- KPIs rápidos del agente -->
+      <div class="kpi-grid cols-4" style="margin-bottom:22px" id="agente-kpis"></div>
+
+      <!-- Chat container -->
+      <div class="grid g21" style="align-items:start">
+        <div class="card" style="padding:0;overflow:hidden">
+          <!-- Chat header -->
+          <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Asesor CRM — D'LOGIA</div>
+              <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">
+                <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>
+                En línea · Powered by GPT-4o mini
+              </div>
+            </div>
+            <button onclick="limpiarChat()" style="margin-left:auto;background:var(--s2);border:1px solid var(--border);color:var(--text3);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif">Limpiar</button>
+          </div>
+
+          <!-- Mensajes -->
+          <div id="chat-messages" style="height:420px;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--s3) transparent">
+            <!-- Mensaje bienvenida -->
+            <div class="msg-bot">
+              <div class="msg-bubble bot">
+                👋 Hola, soy tu Asesor IA del CRM. Tengo acceso completo a los datos en tiempo real del portafolio.<br><br>
+                Puedes preguntarme cosas como:<br>
+                • <em>¿Cuál es el proyecto con más unidades disponibles?</em><br>
+                • <em>¿Qué asesor cerró más negocios?</em><br>
+                • <em>¿Cuánto hay en cartera vencida?</em><br>
+                • <em>¿Cuáles clientes están en negociación?</em>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input -->
+          <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px">
+            <input id="chat-input" type="text"
+              placeholder="Escribe tu pregunta sobre el CRM..."
+              style="flex:1;background:var(--s2);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;outline:none"
+              onkeydown="if(event.key==='Enter') enviarMensaje()">
+            <button onclick="enviarMensaje()" id="btn-send"
+              style="background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;color:#fff;padding:10px 20px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity 0.2s">
+              Enviar ➤
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel derecho: preguntas sugeridas + config -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div class="card-title">💡 Preguntas Sugeridas</div>
+            <div class="card-sub">Haz clic para preguntar directamente</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px" id="sugeridas"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">⚙️ Configuración</div>
+            <div class="card-sub">API Key de OpenAI</div>
+            <input id="openai-key" type="password"
+              placeholder="sk-proj-..."
+              style="width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;outline:none;margin-bottom:8px">
+            <button onclick="guardarKey()"
+              style="width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--text2);padding:8px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer">
+              Guardar Key
+            </button>
+            <div id="key-status" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📊 Contexto Activo</div>
+            <div class="card-sub">Datos que el agente conoce</div>
+            <div id="agente-contexto" style="font-size:11px;color:var(--text3);line-height:1.8;margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main-area -->
 
@@ -637,7 +755,8 @@ let charts = {};
 
 const TITLES = {
   overview:'Overview General', proyectos:'Proyectos',
-  clientes:'Clientes', negocios:'Seguimiento de Negocios', financiero:'Financiero'
+  clientes:'Clientes', negocios:'Seguimiento de Negocios',
+  financiero:'Financiero', agente:'Asesor IA 🤖'
 };
 const ETAPA_C = {
   "Prospección":"#475569","Contacto Inicial":"#0891b2","Visita Inmueble":"#7c3aed",
@@ -696,6 +815,7 @@ function renderAll() {
   renderClientes();
   renderNegocios();
   renderFinanciero();
+  renderAgente();
 }
 
 // ══════════════════════════════════════════════
@@ -1091,6 +1211,182 @@ function mkChart(id, type, labels, datasets, options={}) {
       }
     }
   });
+}
+
+// ══════════════════════════════════════════════
+// ASESOR IA
+// ══════════════════════════════════════════════
+const SUGERIDAS = [
+  "¿Cuál es el proyecto con más unidades disponibles?",
+  "¿Qué asesor cerró más negocios?",
+  "¿Cuánto hay en cartera vencida y cuántos clientes están en mora?",
+  "¿Cuál es la tasa de conversión actual?",
+  "¿Cuáles proyectos están casi agotados?",
+  "Dame un resumen ejecutivo del estado del CRM",
+  "¿Qué etapa del pipeline tiene más negocios?",
+  "¿Cuánto dinero hay cobrado vs pendiente?"
+];
+
+function renderAgente() {
+  const k = DB.kpis;
+  document.getElementById('agente-kpis').innerHTML = [
+    {l:'Proyectos activos', v:DB.proyectos.filter(p=>p.estado==='En venta').length, s:'en venta', c:'blue'},
+    {l:'Leads activos',     v:k.leadsActivos,    s:'sin perder',     c:'cyan'},
+    {l:'Negocios abiertos', v:DB.pipeline.filter(p=>p.etapa!=='Ganado'&&p.etapa!=='Perdido').length, s:'en proceso', c:'orange'},
+    {l:'Cartera mora',      v:k.enMora,           s:'clientes',       c:k.enMora>0?'red':'green'},
+  ].map(kpiHTML).join('');
+
+  // Sugeridas
+  document.getElementById('sugeridas').innerHTML = SUGERIDAS.map(q=>
+    `<button class="sug-btn" onclick="usarSugerida('${q.replace(/'/g,"\\'")}')">${q}</button>`
+  ).join('');
+
+  // Contexto activo
+  document.getElementById('agente-contexto').innerHTML = `
+    ✅ ${DB.proyectos.length} proyectos cargados<br>
+    ✅ ${DB.clientes.length} clientes en la base<br>
+    ✅ ${DB.pipeline.length} negocios en pipeline<br>
+    ✅ ${DB.financiero.length} registros financieros<br>
+    ✅ KPIs calculados en tiempo real<br>
+    ✅ Datos desde Google Sheets
+  `;
+
+  // Cargar key guardada
+  const savedKey = localStorage.getItem('openai_key');
+  if(savedKey) {
+    document.getElementById('openai-key').value = savedKey;
+    document.getElementById('key-status').innerHTML = '✅ Key configurada';
+    document.getElementById('key-status').style.color = 'var(--green)';
+  }
+}
+
+function guardarKey() {
+  const key = document.getElementById('openai-key').value.trim();
+  if(!key.startsWith('sk-')) {
+    document.getElementById('key-status').innerHTML = '❌ Key inválida';
+    document.getElementById('key-status').style.color = 'var(--red)';
+    return;
+  }
+  localStorage.setItem('openai_key', key);
+  document.getElementById('key-status').innerHTML = '✅ Key guardada correctamente';
+  document.getElementById('key-status').style.color = 'var(--green)';
+}
+
+function usarSugerida(pregunta) {
+  document.getElementById('chat-input').value = pregunta;
+  enviarMensaje();
+}
+
+function limpiarChat() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = `<div class="msg-bot">
+    <div class="msg-bubble bot">
+      👋 Chat reiniciado. ¿En qué puedo ayudarte con los datos del CRM?
+    </div>
+  </div>`;
+}
+
+function buildContext() {
+  const k = DB.kpis;
+  return `Eres un asesor experto en análisis de CRM inmobiliario. Tienes acceso a los siguientes datos en tiempo real:
+
+RESUMEN EJECUTIVO:
+- Leads activos: ${k.leadsActivos} de ${k.totalLeads} totales
+- Tasa de conversión: ${k.tasaConversion}%
+- Unidades vendidas: ${k.totalVendidas} de ${k.totalUnidades} totales (${k.pctVendido}% vendido)
+- Unidades disponibles: ${k.totalDisponibles} | Reservadas: ${k.totalReservadas}
+- Total cobrado: $${fmtM(k.totalCobrado)} COP | Pendiente: $${fmtM(k.totalPendiente)} COP
+- Clientes en mora: ${k.enMora}
+- Valor total pipeline: $${fmtM(k.valorPipelineTotal)} COP
+
+PROYECTOS (${DB.proyectos.length}):
+${DB.proyectos.map(p=>`- ${p.nombre} (${p.ciudad}): ${p.vendidas}/${p.total} uds vendidas (${p.pctVendido}%), ${p.disponibles} disponibles, $${(p.precioM2/1e6).toFixed(1)}M/m², Estado: ${p.estado}`).join('\n')}
+
+PIPELINE POR ETAPA:
+${k.porEtapa.map(e=>`- ${e.etapa}: ${e.count} negocios ($${fmtM(e.valor)} COP)`).join('\n')}
+
+TOP ASESORES:
+${k.topAsesores.map((a,i)=>`${i+1}. ${a.nombre}: ${a.ganados} ganados de ${a.total} negocios ($${fmtM(a.valor)} en pipeline)`).join('\n')}
+
+LEADS POR FUENTE:
+${k.porFuente.map(f=>`- ${f.fuente}: ${f.count} leads (${f.pct}%)`).join('\n')}
+
+FINANCIERO - ESTADOS DE PAGO:
+- Al día: ${DB.financiero.filter(f=>f.estadoPago==='Al día').length} registros
+- Pendiente: ${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length} registros
+- En mora: ${DB.financiero.filter(f=>f.estadoPago==='En mora').length} registros
+- Pagado: ${DB.financiero.filter(f=>f.estadoPago==='Pagado').length} registros
+
+Responde en español, de forma clara, concisa y profesional. Si hay datos numéricos, formátalos en COP. Máximo 150 palabras por respuesta.`;
+}
+
+async function enviarMensaje() {
+  const input = document.getElementById('chat-input');
+  const pregunta = input.value.trim();
+  if(!pregunta) return;
+
+  const key = localStorage.getItem('openai_key') || document.getElementById('openai-key').value.trim();
+  if(!key) {
+    agregarMensaje('bot', '⚠️ Por favor configura tu API Key de OpenAI en el panel de configuración.');
+    return;
+  }
+
+  agregarMensaje('user', pregunta);
+  input.value = '';
+
+  const thinkingId = 'thinking-' + Date.now();
+  agregarMensaje('thinking', '⏳ Analizando los datos del CRM...', thinkingId);
+
+  const btn = document.getElementById('btn-send');
+  btn.style.opacity = '0.5';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: buildContext() },
+          { role: 'user',   content: pregunta }
+        ],
+        max_tokens: 300,
+        temperature: 0.4
+      })
+    });
+
+    const data = await res.json();
+
+    // Remover thinking
+    const thinkingEl = document.getElementById(thinkingId);
+    if(thinkingEl) thinkingEl.parentElement.remove();
+
+    if(data.error) throw new Error(data.error.message);
+
+    const respuesta = data.choices[0].message.content;
+    agregarMensaje('bot', respuesta);
+
+  } catch(e) {
+    const thinkingEl = document.getElementById(thinkingId);
+    if(thinkingEl) thinkingEl.parentElement.remove();
+    agregarMensaje('bot', `❌ Error: ${e.message}. Verifica tu API Key.`);
+  } finally {
+    btn.style.opacity = '1';
+    btn.disabled = false;
+  }
+}
+
+function agregarMensaje(tipo, texto, id='') {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = tipo === 'user' ? 'msg-user' : 'msg-bot';
+  div.innerHTML = `<div class="msg-bubble ${tipo}" ${id?`id="${id}"`:''}>${texto}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
 loadData();
