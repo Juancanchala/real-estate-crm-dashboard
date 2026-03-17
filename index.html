@@ -1270,6 +1270,25 @@ function habilitarInput(estado) {
   document.getElementById('btn-send').style.opacity = estado ? '1' : '0.4';
 }
 
+function buildContext() {
+  const k = DB.kpis;
+  return `Eres un asesor experto en CRM inmobiliario para D'LOGIA. Datos en tiempo real:
+
+RESUMEN: Leads activos: ${k.leadsActivos}/${k.totalLeads}. Conversión: ${k.tasaConversion}%. Uds vendidas: ${k.totalVendidas}/${k.totalUnidades} (${k.pctVendido}%). Disponibles: ${k.totalDisponibles}. Cobrado: $${fmtM(k.totalCobrado)} COP. Pendiente: $${fmtM(k.totalPendiente)} COP. En mora: ${k.enMora}.
+
+PROYECTOS: ${DB.proyectos.map(p=>`${p.nombre}(${p.ciudad}): ${p.vendidas}/${p.total}uds, ${p.pctVendido}% vendido, ${p.disponibles} disponibles, $${(p.precioM2/1e6).toFixed(1)}M/m², ${p.estado}`).join(' | ')}
+
+PIPELINE: ${k.porEtapa.map(e=>`${e.etapa}:${e.count}($${fmtM(e.valor)})`).join(', ')}
+
+ASESORES: ${k.topAsesores.map((a,i)=>`${i+1}.${a.nombre}:${a.ganados}ganados/${a.total}total`).join(', ')}
+
+FUENTES: ${k.porFuente.map(f=>`${f.fuente}:${f.count}(${f.pct}%)`).join(', ')}
+
+FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length}, Pendiente:${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length}, Mora:${DB.financiero.filter(f=>f.estadoPago==='En mora').length}, Pagado:${DB.financiero.filter(f=>f.estadoPago==='Pagado').length}
+
+Responde en español, claro y profesional. Máximo 150 palabras.`;
+}
+
 async function enviarMensaje() {
   if (preguntasUsadas >= MAX_PREGUNTAS) {
     agregarMensaje('bot', '🔒 Has usado tus <strong>3 preguntas gratuitas</strong>. ¿Quieres acceso completo? <a href="https://dlogia.tech" target="_blank" style="color:#60a5fa">Contáctanos en D\'LOGIA</a>');
