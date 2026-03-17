@@ -1238,7 +1238,7 @@ function renderAgente() {
   ].map(kpiHTML).join('');
 
   document.getElementById('sugeridas').innerHTML = SUGERIDAS.map(q=>
-    `<button class="sug-btn" onclick="usarSugerida('${q.replace(/'/g,"\\'")}')">${q}</button>`
+    `<button class="sug-btn" onclick="document.getElementById('chat-input').value=this.dataset.q;enviarMensaje()" data-q="${q}">${q}</button>`
   ).join('');
 
   document.getElementById('agente-contexto').innerHTML = `
