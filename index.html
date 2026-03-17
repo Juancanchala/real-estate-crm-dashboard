@@ -724,16 +724,14 @@ aside {
           </div>
 
           <div class="card">
-            <div class="card-title">⚙️ Configuración</div>
-            <div class="card-sub">API Key de OpenAI</div>
-            <input id="openai-key" type="password"
-              placeholder="sk-proj-..."
-              style="width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;outline:none;margin-bottom:8px">
-            <button onclick="guardarKey()"
-              style="width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--text2);padding:8px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer">
-              Guardar Key
-            </button>
-            <div id="key-status" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center"></div>
+            <div class="card-title">⚙️ Estado del Agente</div>
+            <div class="card-sub">Conexión segura via Netlify</div>
+            <div style="font-size:12px;color:var(--text3);line-height:1.8">
+              🔐 API Key protegida en servidor<br>
+              ✅ Sin límite de configuración<br>
+              ⚡ Respuestas en tiempo real<br>
+              🤖 Modelo: GPT-4o mini
+            </div>
           </div>
 
           <div class="card">
@@ -1227,6 +1225,9 @@ const SUGERIDAS = [
   "¿Cuánto dinero hay cobrado vs pendiente?"
 ];
 
+const MAX_PREGUNTAS = 3;
+let preguntasUsadas = 0;
+
 function renderAgente() {
   const k = DB.kpis;
   document.getElementById('agente-kpis').innerHTML = [
@@ -1236,12 +1237,10 @@ function renderAgente() {
     {l:'Cartera mora',      v:k.enMora,           s:'clientes',       c:k.enMora>0?'red':'green'},
   ].map(kpiHTML).join('');
 
-  // Sugeridas
   document.getElementById('sugeridas').innerHTML = SUGERIDAS.map(q=>
     `<button class="sug-btn" onclick="usarSugerida('${q.replace(/'/g,"\\'")}')">${q}</button>`
   ).join('');
 
-  // Contexto activo
   document.getElementById('agente-contexto').innerHTML = `
     ✅ ${DB.proyectos.length} proyectos cargados<br>
     ✅ ${DB.clientes.length} clientes en la base<br>
@@ -1250,133 +1249,83 @@ function renderAgente() {
     ✅ KPIs calculados en tiempo real<br>
     ✅ Datos desde Google Sheets
   `;
-
-  // Cargar key guardada
-  const savedKey = localStorage.getItem('openai_key');
-  if(savedKey) {
-    document.getElementById('openai-key').value = savedKey;
-    document.getElementById('key-status').innerHTML = '✅ Key configurada';
-    document.getElementById('key-status').style.color = 'var(--green)';
-  }
 }
 
-function guardarKey() {
-  const key = document.getElementById('openai-key').value.trim();
-  if(!key.startsWith('sk-')) {
-    document.getElementById('key-status').innerHTML = '❌ Key inválida';
-    document.getElementById('key-status').style.color = 'var(--red)';
-    return;
-  }
-  localStorage.setItem('openai_key', key);
-  document.getElementById('key-status').innerHTML = '✅ Key guardada correctamente';
-  document.getElementById('key-status').style.color = 'var(--green)';
-}
-
-function usarSugerida(pregunta) {
-  document.getElementById('chat-input').value = pregunta;
-  enviarMensaje();
-}
+function guardarKey() {}
 
 function limpiarChat() {
+  preguntasUsadas = 0;
+  habilitarInput(true);
   const msgs = document.getElementById('chat-messages');
   msgs.innerHTML = `<div class="msg-bot">
     <div class="msg-bubble bot">
-      👋 Chat reiniciado. ¿En qué puedo ayudarte con los datos del CRM?
+      👋 Chat reiniciado. Tienes <strong>${MAX_PREGUNTAS} preguntas</strong> disponibles. ¿En qué puedo ayudarte?
     </div>
   </div>`;
 }
 
-function buildContext() {
-  const k = DB.kpis;
-  return `Eres un asesor experto en análisis de CRM inmobiliario. Tienes acceso a los siguientes datos en tiempo real:
-
-RESUMEN EJECUTIVO:
-- Leads activos: ${k.leadsActivos} de ${k.totalLeads} totales
-- Tasa de conversión: ${k.tasaConversion}%
-- Unidades vendidas: ${k.totalVendidas} de ${k.totalUnidades} totales (${k.pctVendido}% vendido)
-- Unidades disponibles: ${k.totalDisponibles} | Reservadas: ${k.totalReservadas}
-- Total cobrado: $${fmtM(k.totalCobrado)} COP | Pendiente: $${fmtM(k.totalPendiente)} COP
-- Clientes en mora: ${k.enMora}
-- Valor total pipeline: $${fmtM(k.valorPipelineTotal)} COP
-
-PROYECTOS (${DB.proyectos.length}):
-${DB.proyectos.map(p=>`- ${p.nombre} (${p.ciudad}): ${p.vendidas}/${p.total} uds vendidas (${p.pctVendido}%), ${p.disponibles} disponibles, $${(p.precioM2/1e6).toFixed(1)}M/m², Estado: ${p.estado}`).join('\n')}
-
-PIPELINE POR ETAPA:
-${k.porEtapa.map(e=>`- ${e.etapa}: ${e.count} negocios ($${fmtM(e.valor)} COP)`).join('\n')}
-
-TOP ASESORES:
-${k.topAsesores.map((a,i)=>`${i+1}. ${a.nombre}: ${a.ganados} ganados de ${a.total} negocios ($${fmtM(a.valor)} en pipeline)`).join('\n')}
-
-LEADS POR FUENTE:
-${k.porFuente.map(f=>`- ${f.fuente}: ${f.count} leads (${f.pct}%)`).join('\n')}
-
-FINANCIERO - ESTADOS DE PAGO:
-- Al día: ${DB.financiero.filter(f=>f.estadoPago==='Al día').length} registros
-- Pendiente: ${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length} registros
-- En mora: ${DB.financiero.filter(f=>f.estadoPago==='En mora').length} registros
-- Pagado: ${DB.financiero.filter(f=>f.estadoPago==='Pagado').length} registros
-
-Responde en español, de forma clara, concisa y profesional. Si hay datos numéricos, formátalos en COP. Máximo 150 palabras por respuesta.`;
+function habilitarInput(estado) {
+  document.getElementById('chat-input').disabled = !estado;
+  document.getElementById('btn-send').disabled = !estado;
+  document.getElementById('btn-send').style.opacity = estado ? '1' : '0.4';
 }
 
 async function enviarMensaje() {
+  if (preguntasUsadas >= MAX_PREGUNTAS) {
+    agregarMensaje('bot', '🔒 Has usado tus <strong>3 preguntas gratuitas</strong>. ¿Quieres acceso completo? <a href="https://dlogia.tech" target="_blank" style="color:#60a5fa">Contáctanos en D\'LOGIA</a>');
+    habilitarInput(false);
+    return;
+  }
+
   const input = document.getElementById('chat-input');
   const pregunta = input.value.trim();
   if(!pregunta) return;
 
-  const key = localStorage.getItem('openai_key') || document.getElementById('openai-key').value.trim();
-  if(!key) {
-    agregarMensaje('bot', '⚠️ Por favor configura tu API Key de OpenAI en el panel de configuración.');
-    return;
-  }
-
+  preguntasUsadas++;
   agregarMensaje('user', pregunta);
   input.value = '';
 
+  const restantes = MAX_PREGUNTAS - preguntasUsadas;
   const thinkingId = 'thinking-' + Date.now();
-  agregarMensaje('thinking', '⏳ Analizando los datos del CRM...', thinkingId);
+  agregarMensaje('thinking', `⏳ Analizando datos del CRM... (${restantes} pregunta${restantes!==1?'s':''} restante${restantes!==1?'s':''})`, thinkingId);
 
   const btn = document.getElementById('btn-send');
   btn.style.opacity = '0.5';
   btn.disabled = true;
 
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await fetch('/.netlify/functions/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: buildContext() },
           { role: 'user',   content: pregunta }
-        ],
-        max_tokens: 300,
-        temperature: 0.4
+        ]
       })
     });
 
     const data = await res.json();
-
-    // Remover thinking
     const thinkingEl = document.getElementById(thinkingId);
     if(thinkingEl) thinkingEl.parentElement.remove();
 
-    if(data.error) throw new Error(data.error.message);
+    if(data.error) throw new Error(data.error);
+    agregarMensaje('bot', data.reply);
 
-    const respuesta = data.choices[0].message.content;
-    agregarMensaje('bot', respuesta);
+    if(preguntasUsadas >= MAX_PREGUNTAS) {
+      agregarMensaje('bot', '💡 Has usado tus <strong>3 preguntas gratuitas</strong>. Para acceso ilimitado, <a href="https://dlogia.tech" target="_blank" style="color:#60a5fa">contáctanos en D\'LOGIA</a>.');
+      habilitarInput(false);
+    }
 
   } catch(e) {
     const thinkingEl = document.getElementById(thinkingId);
     if(thinkingEl) thinkingEl.parentElement.remove();
-    agregarMensaje('bot', `❌ Error: ${e.message}. Verifica tu API Key.`);
+    agregarMensaje('bot', `❌ Error de conexión: ${e.message}`);
   } finally {
-    btn.style.opacity = '1';
-    btn.disabled = false;
+    if(preguntasUsadas < MAX_PREGUNTAS) {
+      btn.style.opacity = '1';
+      btn.disabled = false;
+    }
   }
 }
 
