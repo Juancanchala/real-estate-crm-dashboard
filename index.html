@@ -376,6 +376,100 @@ aside {
 
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--s3);border-radius:4px;}
+
+/* ════════════════════════════════════
+   RESPONSIVE — HAMBURGER & OVERLAY
+════════════════════════════════════ */
+.hamburger {
+  display:none;
+  background:none;border:none;cursor:pointer;
+  padding:6px;border-radius:8px;
+  color:var(--text);font-size:22px;line-height:1;
+  transition:background 0.2s;
+}
+.hamburger:hover{background:var(--s2);}
+
+.sidebar-overlay {
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:49;
+  backdrop-filter:blur(2px);
+}
+.sidebar-overlay.visible{display:block;}
+
+/* ════════════════════════════════════
+   RESPONSIVE — TABLET (≤1100px)
+════════════════════════════════════ */
+@media (max-width:1100px) {
+  .kpi-grid.cols-6{grid-template-columns:repeat(3,1fr);}
+  .grid.g3{grid-template-columns:1fr 1fr;}
+  .grid.g21{grid-template-columns:1fr;}
+  .grid.g12{grid-template-columns:1fr;}
+  .grid.g31{grid-template-columns:1fr;}
+}
+
+/* ════════════════════════════════════
+   RESPONSIVE — MOBILE (≤768px)
+════════════════════════════════════ */
+@media (max-width:768px) {
+
+  /* Body layout */
+  body{flex-direction:column;height:auto;overflow:auto;}
+
+  /* Sidebar — oculto por defecto, desliza desde izquierda */
+  aside {
+    position:fixed;top:0;left:0;bottom:0;
+    transform:translateX(-100%);
+    transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+    z-index:50;
+    width:240px;
+    min-width:240px;
+  }
+  aside.open{transform:translateX(0);}
+
+  /* Main area ocupa todo */
+  .main-area{width:100%;min-height:100vh;}
+
+  /* Topbar */
+  .topbar{padding:0 16px;gap:10px;}
+  .hamburger{display:flex;align-items:center;justify-content:center;}
+
+  /* Content padding */
+  .content{padding:16px;}
+
+  /* KPIs */
+  .kpi-grid.cols-6{grid-template-columns:repeat(2,1fr);}
+  .kpi-grid.cols-4{grid-template-columns:repeat(2,1fr);}
+  .kpi-grid.cols-3{grid-template-columns:repeat(2,1fr);}
+  .kpi-val{font-size:22px;}
+
+  /* Grids → 1 columna */
+  .grid.g2,.grid.g3,.grid.g21,.grid.g12,.grid.g31{grid-template-columns:1fr;}
+
+  /* Charts height reducida */
+  .chart-wrap[style*="height:200px"]{height:180px!important;}
+  .chart-wrap[style*="height:230px"]{height:200px!important;}
+  .chart-wrap[style*="height:240px"]{height:200px!important;}
+  .chart-wrap[style*="height:260px"]{height:200px!important;}
+
+  /* Chat agente */
+  #chat-messages{height:320px!important;}
+
+  /* Tablas scroll */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .tbl{min-width:600px;}
+
+  /* Filter bar wrap */
+  .filter-bar{flex-wrap:wrap;}
+  .search-input{min-width:100%;width:100%;}
+
+  /* Section label font */
+  .sec{font-size:9px;}
+
+  /* Topbar title */
+  .topbar-title{font-size:13px;}
+}
 </style>
 </head>
 <body>
@@ -385,6 +479,9 @@ aside {
   <div class="spinner"></div>
   <div class="loading-label">Cargando datos en vivo...</div>
 </div>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR -->
 <aside>
@@ -427,7 +524,10 @@ aside {
 <!-- MAIN -->
 <div class="main-area">
   <div class="topbar">
-    <div class="topbar-title" id="topbar-title">Overview General</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menú">☰</button>
+      <div class="topbar-title" id="topbar-title">Overview General</div>
+    </div>
     <div class="topbar-right">
       <button class="btn btn-ghost" onclick="loadData()" id="btn-refresh">
         ↻ Actualizar
@@ -762,6 +862,14 @@ const ETAPA_C = {
   "Ganado":"#059669","Perdido":"#dc2626"
 };
 
+// ── SIDEBAR TOGGLE (mobile) ──
+function toggleSidebar() {
+  const aside = document.querySelector('aside');
+  const overlay = document.getElementById('sidebar-overlay');
+  aside.classList.toggle('open');
+  overlay.classList.toggle('visible');
+}
+
 // ── NAVIGATION ──
 function navigate(view, el) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -769,6 +877,11 @@ function navigate(view, el) {
   el.classList.add('active');
   document.getElementById('view-'+view).classList.add('active');
   document.getElementById('topbar-title').textContent = TITLES[view];
+  // Cerrar sidebar en móvil al navegar
+  if(window.innerWidth <= 768) {
+    document.querySelector('aside').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('visible');
+  }
 }
 
 // ── FORMAT ──
