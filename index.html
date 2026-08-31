@@ -22,11 +22,42 @@
   --purple:   #8b5cf6;
   --text:     #e2e8f0;
   --text2:    #94a3b8;
+  --text2b:   #64748b;
   --text3:    #475569;
   --sidebar-w: 220px;
+  /* Colores de acento para textos pequeños (badges, KPIs, ranking) —
+     en modo claro se oscurecen para mantener contraste sobre fondo blanco */
+  --tx-green:  #34d399;
+  --tx-red:    #f87171;
+  --tx-amber:  #fbbf24;
+  --tx-blue:   #60a5fa;
+  --tx-orange: #fb923c;
+  --tx-violet: #a78bfa;
+  --tx-cyan:   #67e8f9;
+  --tx-bronze: #cd7f32;
+}
+:root[data-theme="light"] {
+  --bg:       #f5f7fb;
+  --s1:       #ffffff;
+  --s2:       #eef1f6;
+  --s3:       #e2e8f0;
+  --border:   rgba(15,23,42,0.08);
+  --border2:  rgba(15,23,42,0.14);
+  --text:     #0f172a;
+  --text2:    #475569;
+  --text2b:   #5b6b7d;
+  --text3:    #94a3b8;
+  --tx-green:  #047857;
+  --tx-red:    #b91c1c;
+  --tx-amber:  #b45309;
+  --tx-blue:   #1d4ed8;
+  --tx-orange: #c2410c;
+  --tx-violet: #6d28d9;
+  --tx-cyan:   #0e7490;
+  --tx-bronze: #92400e;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;display:flex;height:100vh;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;display:flex;height:100vh;overflow:hidden;transition:background 0.25s,color 0.25s;}
 
 /* ── SIDEBAR ── */
 aside {
@@ -198,12 +229,12 @@ aside {
 
 .kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:10px;}
 .kpi-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;margin-bottom:5px;}
-.kpi.blue   .kpi-val{color:#60a5fa;}
-.kpi.green  .kpi-val{color:#34d399;}
-.kpi.orange .kpi-val{color:#fbbf24;}
-.kpi.red    .kpi-val{color:#f87171;}
-.kpi.purple .kpi-val{color:#a78bfa;}
-.kpi.cyan   .kpi-val{color:#67e8f9;}
+.kpi.blue   .kpi-val{color:var(--tx-blue);}
+.kpi.green  .kpi-val{color:var(--tx-green);}
+.kpi.orange .kpi-val{color:var(--tx-amber);}
+.kpi.red    .kpi-val{color:var(--tx-red);}
+.kpi.purple .kpi-val{color:var(--tx-violet);}
+.kpi.cyan   .kpi-val{color:var(--tx-cyan);}
 .kpi-sub{font-size:11px;color:var(--text3);}
 
 /* GRID LAYOUTS */
@@ -248,21 +279,21 @@ aside {
 
 /* BADGE */
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
-.b-ganado    {background:rgba(16,185,129,0.15);color:#34d399;}
-.b-perdido   {background:rgba(239,68,68,0.15);color:#f87171;}
-.b-negociacion{background:rgba(245,158,11,0.15);color:#fbbf24;}
-.b-cierre    {background:rgba(59,130,246,0.15);color:#60a5fa;}
-.b-propuesta {background:rgba(249,115,22,0.15);color:#fb923c;}
-.b-visita    {background:rgba(139,92,246,0.15);color:#a78bfa;}
-.b-contacto  {background:rgba(6,182,212,0.15);color:#67e8f9;}
-.b-prospeccion{background:rgba(100,116,139,0.15);color:#94a3b8;}
-.b-mora      {background:rgba(239,68,68,0.15);color:#f87171;}
-.b-aldia     {background:rgba(16,185,129,0.15);color:#34d399;}
-.b-pendiente {background:rgba(245,158,11,0.15);color:#fbbf24;}
-.b-pagado    {background:rgba(59,130,246,0.15);color:#60a5fa;}
-.b-enventa   {background:rgba(16,185,129,0.15);color:#34d399;}
-.b-agotado   {background:rgba(239,68,68,0.15);color:#f87171;}
-.b-casiagotado{background:rgba(245,158,11,0.15);color:#fbbf24;}
+.b-ganado    {background:rgba(16,185,129,0.15);color:var(--tx-green);}
+.b-perdido   {background:rgba(239,68,68,0.15);color:var(--tx-red);}
+.b-negociacion{background:rgba(245,158,11,0.15);color:var(--tx-amber);}
+.b-cierre    {background:rgba(59,130,246,0.15);color:var(--tx-blue);}
+.b-propuesta {background:rgba(249,115,22,0.15);color:var(--tx-orange);}
+.b-visita    {background:rgba(139,92,246,0.15);color:var(--tx-violet);}
+.b-contacto  {background:rgba(6,182,212,0.15);color:var(--tx-cyan);}
+.b-prospeccion{background:rgba(100,116,139,0.15);color:var(--text2);}
+.b-mora      {background:rgba(239,68,68,0.15);color:var(--tx-red);}
+.b-aldia     {background:rgba(16,185,129,0.15);color:var(--tx-green);}
+.b-pendiente {background:rgba(245,158,11,0.15);color:var(--tx-amber);}
+.b-pagado    {background:rgba(59,130,246,0.15);color:var(--tx-blue);}
+.b-enventa   {background:rgba(16,185,129,0.15);color:var(--tx-green);}
+.b-agotado   {background:rgba(239,68,68,0.15);color:var(--tx-red);}
+.b-casiagotado{background:rgba(245,158,11,0.15);color:var(--tx-amber);}
 
 /* PROGRESS */
 .pbar{height:4px;background:var(--s3);border-radius:4px;overflow:hidden;margin-top:5px;}
@@ -284,7 +315,7 @@ aside {
 .asr-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
 .asr-item:last-child{border-bottom:none;}
 .asr-rank{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;width:26px;}
-.asr-rank.gold{color:#fbbf24;}.asr-rank.silver{color:#94a3b8;}.asr-rank.bronze{color:#cd7f32;}
+.asr-rank.gold{color:var(--tx-amber);}.asr-rank.silver{color:var(--text2);}.asr-rank.bronze{color:var(--tx-bronze);}
 .asr-info{flex:1;}
 .asr-name{font-size:13px;font-weight:500;}
 .asr-meta{font-size:11px;color:var(--text3);margin-top:2px;}
@@ -330,7 +361,7 @@ aside {
 .mora-alert{
   background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);
   border-radius:10px;padding:14px 16px;margin-bottom:16px;
-  display:flex;align-items:center;gap:10px;font-size:12px;color:#f87171;
+  display:flex;align-items:center;gap:10px;font-size:12px;color:var(--tx-red);
 }
 
 /* CHART */
@@ -641,6 +672,7 @@ aside {
       <div class="topbar-title" id="topbar-title">Overview General</div>
     </div>
     <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="toggleTheme()" id="theme-toggle" title="Cambiar tema claro/oscuro" style="padding:9px 11px">☀️</button>
       <button class="btn btn-ghost" onclick="loadData()" id="btn-refresh">
         ↻ Actualizar
       </button>
@@ -957,6 +989,31 @@ const API = "https://script.google.com/macros/s/AKfycbzb5C8fJMdjWuVP89eyu4Sl0YSf
 let DB = {};
 let charts = {};
 
+// ── TEMA CLARO/OSCURO ──
+// Chart.js dibuja en <canvas>, que no puede leer variables CSS, así que
+// mantenemos una paleta de colores por tema aquí y la aplicamos a cada gráfico.
+const CHART_THEME = {
+  dark:  { surface:'#0f1623', text:'#e2e8f0', text2:'#94a3b8', text3:'#475569',
+           grid:'rgba(255,255,255,0.03)', tooltipBg:'#1c2840', tooltipBorder:'rgba(255,255,255,0.1)' },
+  light: { surface:'#ffffff', text:'#0f172a', text2:'#475569', text3:'#94a3b8',
+           grid:'rgba(15,23,42,0.06)', tooltipBg:'#ffffff', tooltipBorder:'rgba(15,23,42,0.12)' }
+};
+let theme = localStorage.getItem('crm-theme') || 'dark';
+const ct = () => CHART_THEME[theme];
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('crm-theme', theme);
+  applyTheme();
+  if (DB.kpis) renderAll(); // re-dibuja los charts con los colores del nuevo tema
+}
+applyTheme();
+
 const TITLES = {
   overview:'Overview General', proyectos:'Proyectos',
   clientes:'Clientes', negocios:'Seguimiento de Negocios',
@@ -1018,7 +1075,7 @@ async function loadData() {
       <div style="text-align:center;color:#ef4444;padding:32px">
         <div style="font-size:40px;margin-bottom:12px">⚠️</div>
         <div style="font-family:'Syne',sans-serif;font-size:15px;margin-bottom:8px">Error de conexión</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:20px">${e.message}</div>
+        <div style="font-size:12px;color:var(--text2b);margin-bottom:20px">${e.message}</div>
         <button onclick="loadData()" style="background:linear-gradient(135deg,#3b82f6,#06b6d4);border:none;color:#fff;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:13px">Reintentar</button>
       </div>`;
   } finally {
@@ -1059,8 +1116,8 @@ function renderOverview() {
     DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido').map(e=>e.etapa),
     [{data:DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido').map(e=>e.count),
       backgroundColor:DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido').map(e=>ETAPA_C[e.etapa]),
-      borderColor:'#0f1623',borderWidth:3}],
-    {cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},padding:10,boxWidth:10}},
+      borderColor:ct().surface,borderWidth:3}],
+    {cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:ct().text2,font:{size:10},padding:10,boxWidth:10}},
     tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}`}}}}
   );
 
@@ -1080,8 +1137,8 @@ function renderOverview() {
     [{data:f.map(x=>x.count),backgroundColor:f.map((_,i)=>cols[i%cols.length]+'bb'),
       borderColor:f.map((_,i)=>cols[i%cols.length]),borderWidth:1,borderRadius:5}],
     {indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} prospectos`}}},
-    scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#475569',font:{size:10}}},
-    y:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}}}}
+    scales:{x:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10}}},
+    y:{grid:{display:false},ticks:{color:ct().text2,font:{size:10}}}}}
   );
 
   // Financiero
@@ -1091,9 +1148,9 @@ function renderOverview() {
   mkChart('ch-ov-financiero','bar',DB.proyectos.map(p=>p.nombre.split(' ').slice(0,2).join(' ')),
     [{label:'Cobrado',data:cob,backgroundColor:'rgba(16,185,129,0.65)',borderColor:'#10b981',borderWidth:1,borderRadius:4},
      {label:'Pendiente',data:pen,backgroundColor:'rgba(245,158,11,0.65)',borderColor:'#f59e0b',borderWidth:1,borderRadius:4}],
-    {plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:10}}},
-    scales:{x:{grid:{display:false},ticks:{color:'#475569',font:{size:9},maxRotation:30}},
-    y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#475569',font:{size:10},callback:v=>'$'+v+'M'}}},
+    {plugins:{legend:{labels:{color:ct().text2,font:{size:10},boxWidth:10}}},
+    scales:{x:{grid:{display:false},ticks:{color:ct().text3,font:{size:9},maxRotation:30}},
+    y:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10},callback:v=>'$'+v+'M'}}},
     tooltip:{callbacks:{label:c=>` ${c.dataset.label}: $${c.raw.toFixed(1)}M`}}}
   );
 
@@ -1130,12 +1187,12 @@ function renderProyectos() {
     const pc=p.pctVendido, co=pc>=80?'#34d399':pc>=50?'#60a5fa':'#fbbf24';
     return `<tr>
       <td style="font-weight:600">${p.nombre}</td>
-      <td style="color:#64748b">${p.ciudad}</td>
-      <td style="color:#64748b">${p.tipo}</td>
+      <td style="color:var(--text2b)">${p.ciudad}</td>
+      <td style="color:var(--text2b)">${p.tipo}</td>
       <td style="font-family:'Syne',sans-serif">${p.total}</td>
-      <td style="color:#34d399;font-family:'Syne',sans-serif">${p.vendidas}</td>
-      <td style="color:#fbbf24;font-family:'Syne',sans-serif">${p.disponibles}</td>
-      <td style="color:#94a3b8">${cop(p.precioM2)}</td>
+      <td style="color:var(--tx-green);font-family:'Syne',sans-serif">${p.vendidas}</td>
+      <td style="color:var(--tx-amber);font-family:'Syne',sans-serif">${p.disponibles}</td>
+      <td style="color:var(--text2)">${cop(p.precioM2)}</td>
       <td><span style="font-family:'Syne',sans-serif;font-weight:700;color:${co}">${pc}%</span>
         <div class="pbar" style="width:80px"><div class="pfill ${pc>=80?'green':pc>=50?'blue':'orange'}" style="width:${pc}%"></div></div>
       </td>
@@ -1145,16 +1202,16 @@ function renderProyectos() {
 
   // Donut composición
   mkChart('ch-proy-donut','doughnut',['Vendidas','Reservadas','Disponibles'],
-    [{data:[totV,totR,totD],backgroundColor:['#10b981','#f59e0b','#3b82f6'],borderColor:'#0f1623',borderWidth:3}],
-    {cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},padding:10,boxWidth:10}}}}
+    [{data:[totV,totR,totD],backgroundColor:['#10b981','#f59e0b','#3b82f6'],borderColor:ct().surface,borderWidth:3}],
+    {cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:ct().text2,font:{size:10},padding:10,boxWidth:10}}}}
   );
 
   // Precio m2
   mkChart('ch-proy-precio','bar',pr.map(p=>p.nombre.split(' ').slice(0,1).join(' ')),
     [{data:pr.map(p=>p.precioM2/1e6),backgroundColor:'rgba(139,92,246,0.6)',borderColor:'#8b5cf6',borderWidth:1,borderRadius:5}],
     {indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` $${(c.raw).toFixed(1)}M/m²`}}},
-    scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#475569',font:{size:9},callback:v=>'$'+v+'M'}},
-    y:{grid:{display:false},ticks:{color:'#64748b',font:{size:9}}}}}
+    scales:{x:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:9},callback:v=>'$'+v+'M'}},
+    y:{grid:{display:false},ticks:{color:ct().text2,font:{size:9}}}}}
   );
 }
 
@@ -1189,8 +1246,8 @@ function renderClientes() {
   // Fuentes donut
   const f=DB.kpis.porFuente, cols2=['#3b82f6','#06b6d4','#10b981','#f59e0b','#8b5cf6','#ef4444'];
   mkChart('ch-cli-fuentes','doughnut',f.map(x=>x.fuente),
-    [{data:f.map(x=>x.count),backgroundColor:f.map((_,i)=>cols2[i%cols2.length]),borderColor:'#0f1623',borderWidth:3}],
-    {cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},padding:8,boxWidth:10}},
+    [{data:f.map(x=>x.count),backgroundColor:f.map((_,i)=>cols2[i%cols2.length]),borderColor:ct().surface,borderWidth:3}],
+    {cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:ct().text2,font:{size:10},padding:8,boxWidth:10}},
     tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} prospectos (${c.dataset.data[c.dataIndex]} total)`}}}}
   );
 
@@ -1211,13 +1268,13 @@ function renderTablaClientes(data) {
   };
   document.getElementById('cli-tbody').innerHTML = data.map(c=>`<tr>
     <td style="font-weight:600">${c.nombre}</td>
-    <td style="color:#64748b">${c.ciudad}</td>
-    <td style="color:#94a3b8">${c.proyectoInteres}</td>
-    <td style="color:#64748b">${c.fuente}</td>
-    <td style="color:#94a3b8">${c.asesor}</td>
+    <td style="color:var(--text2b)">${c.ciudad}</td>
+    <td style="color:var(--text2)">${c.proyectoInteres}</td>
+    <td style="color:var(--text2b)">${c.fuente}</td>
+    <td style="color:var(--text2)">${c.asesor}</td>
     <td>${badge(c.estado)}</td>
-    <td style="color:#475569;font-size:11px">${c.fechaContacto}</td>
-    <td style="color:#475569;font-size:11px">${c.fechaSeguimiento}</td>
+    <td style="color:var(--text3);font-size:11px">${c.fechaContacto}</td>
+    <td style="color:var(--text3);font-size:11px">${c.fechaSeguimiento}</td>
   </tr>`).join('');
 }
 
@@ -1273,9 +1330,9 @@ function renderNegocios() {
   mkChart('ch-neg-asesores','bar',asArr.map(a=>a[0].split(' ')[0]),
     [{label:'Ganados',data:asArr.map(a=>a[1].ganados),backgroundColor:'rgba(16,185,129,0.7)',borderColor:'#10b981',borderWidth:1,borderRadius:4},
      {label:'Total',  data:asArr.map(a=>a[1].total),  backgroundColor:'rgba(59,130,246,0.3)', borderColor:'#3b82f6',borderWidth:1,borderRadius:4}],
-    {plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:10}}},
-    scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:11}}},
-    y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#475569',font:{size:10}}}}}
+    {plugins:{legend:{labels:{color:ct().text2,font:{size:10},boxWidth:10}}},
+    scales:{x:{grid:{display:false},ticks:{color:ct().text2,font:{size:11}}},
+    y:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10}}}}}
   );
 
   // Filtros
@@ -1295,16 +1352,16 @@ function renderTablaNegocios(data) {
     return `<span class="badge ${m[e]||''}">${e}</span>`;
   };
   document.getElementById('neg-tbody').innerHTML = data.map(p=>`<tr>
-    <td style="color:#475569;font-size:11px">${p.id}</td>
+    <td style="color:var(--text3);font-size:11px">${p.id}</td>
     <td style="font-weight:600">${p.cliente}</td>
-    <td style="color:#64748b">${p.proyecto}</td>
-    <td style="color:#94a3b8">${p.asesor}</td>
+    <td style="color:var(--text2b)">${p.proyecto}</td>
+    <td style="color:var(--text2)">${p.asesor}</td>
     <td>${badge(p.etapa)}</td>
-    <td style="font-family:'Syne',sans-serif;font-size:12px;color:#60a5fa">${cop(p.valor)}</td>
-    <td style="color:#94a3b8">${Math.round(p.probabilidad*100)}%</td>
-    <td style="color:#475569;font-size:11px">${p.fechaApertura}</td>
-    <td style="color:#475569;font-size:11px">${p.fechaCierre}</td>
-    <td style="color:#64748b">${p.diasEtapa}d</td>
+    <td style="font-family:'Syne',sans-serif;font-size:12px;color:var(--tx-blue)">${cop(p.valor)}</td>
+    <td style="color:var(--text2)">${Math.round(p.probabilidad*100)}%</td>
+    <td style="color:var(--text3);font-size:11px">${p.fechaApertura}</td>
+    <td style="color:var(--text3);font-size:11px">${p.fechaCierre}</td>
+    <td style="color:var(--text2b)">${p.diasEtapa}d</td>
   </tr>`).join('');
 }
 
@@ -1346,9 +1403,9 @@ function renderFinanciero() {
   mkChart('ch-fin-barras','bar',DB.proyectos.map(p=>p.nombre.split(' ').slice(0,2).join(' ')),
     [{label:'Cobrado',data:cob,backgroundColor:'rgba(16,185,129,0.7)',borderColor:'#10b981',borderWidth:1,borderRadius:4},
      {label:'Pendiente',data:pen,backgroundColor:'rgba(245,158,11,0.7)',borderColor:'#f59e0b',borderWidth:1,borderRadius:4}],
-    {plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:10}}},
-    scales:{x:{grid:{display:false},ticks:{color:'#475569',font:{size:9},maxRotation:30}},
-    y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#475569',font:{size:10},callback:v=>'$'+v+'M'}}}}
+    {plugins:{legend:{labels:{color:ct().text2,font:{size:10},boxWidth:10}}},
+    scales:{x:{grid:{display:false},ticks:{color:ct().text3,font:{size:9},maxRotation:30}},
+    y:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10},callback:v=>'$'+v+'M'}}}}
   );
 
   // Donut estado
@@ -1356,8 +1413,8 @@ function renderFinanciero() {
   const eC=['#10b981','#f59e0b','#ef4444','#3b82f6'];
   mkChart('ch-fin-estado','doughnut',estados,
     [{data:estados.map(e=>fin.filter(f=>f.estadoPago===e).length),
-      backgroundColor:eC,borderColor:'#0f1623',borderWidth:3}],
-    {cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},padding:10,boxWidth:10}}}}
+      backgroundColor:eC,borderColor:ct().surface,borderWidth:3}],
+    {cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:ct().text2,font:{size:10},padding:10,boxWidth:10}}}}
   );
 
   // Filtros
@@ -1373,19 +1430,19 @@ function renderTablaFinanciero(data) {
     return `<span class="badge ${m[e]||''}">${e}</span>`;
   };
   document.getElementById('fin-tbody').innerHTML = data.map(f=>`<tr>
-    <td style="color:#475569;font-size:11px">${f.id}</td>
+    <td style="color:var(--text3);font-size:11px">${f.id}</td>
     <td style="font-weight:600">${f.cliente}</td>
-    <td style="color:#64748b">${f.proyecto}</td>
-    <td style="color:#94a3b8">${f.concepto}</td>
-    <td style="font-family:'Syne',sans-serif;font-size:12px;color:#e2e8f0">${cop(f.valorTotal)}</td>
-    <td style="color:#34d399">${cop(f.valorPagado)}</td>
-    <td style="color:#f87171">${cop(f.valorPendiente)}</td>
+    <td style="color:var(--text2b)">${f.proyecto}</td>
+    <td style="color:var(--text2)">${f.concepto}</td>
+    <td style="font-family:'Syne',sans-serif;font-size:12px;color:var(--text)">${cop(f.valorTotal)}</td>
+    <td style="color:var(--tx-green)">${cop(f.valorPagado)}</td>
+    <td style="color:var(--tx-red)">${cop(f.valorPendiente)}</td>
     <td>
       <span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:${f.pctAvance>=80?'#34d399':f.pctAvance>=50?'#60a5fa':'#fbbf24'}">${f.pctAvance}%</span>
       <div class="pbar" style="width:80px"><div class="pfill ${f.pctAvance>=80?'green':f.pctAvance>=50?'blue':'orange'}" style="width:${f.pctAvance}%"></div></div>
     </td>
     <td>${badge(f.estadoPago)}</td>
-    <td style="color:#475569;font-size:11px">${f.fechaCompromiso}</td>
+    <td style="color:var(--text3);font-size:11px">${f.fechaCompromiso}</td>
   </tr>`).join('');
 }
 
@@ -1423,10 +1480,10 @@ function mkChart(id, type, labels, datasets, options={}) {
       plugins:{
         ...(options.plugins||{}),
         tooltip:{
-          backgroundColor:'#1c2840',
-          titleColor:'#e2e8f0',
-          bodyColor:'#94a3b8',
-          borderColor:'rgba(255,255,255,0.1)',
+          backgroundColor:ct().tooltipBg,
+          titleColor:ct().text,
+          bodyColor:ct().text2,
+          borderColor:ct().tooltipBorder,
           borderWidth:1,
           ...(options.plugins?.tooltip||{})
         }
@@ -1652,7 +1709,7 @@ ${reporte ? formatoReporte : formatoPuntual}`;
 
 async function enviarMensaje() {
   if (preguntasUsadas >= MAX_PREGUNTAS) {
-    agregarMensaje('bot', '🔒 Has usado tus <strong>3 preguntas gratuitas</strong>. ¿Quieres acceso completo? <a href="https://dlogia.tech" target="_blank" style="color:#60a5fa">Contáctanos en D\'LOGIA</a>');
+    agregarMensaje('bot', '🔒 Has usado tus <strong>3 preguntas gratuitas</strong>. ¿Quieres acceso completo? <a href="https://dlogia.tech" target="_blank" style="color:var(--tx-blue)">Contáctanos en D\'LOGIA</a>');
     habilitarInput(false);
     return;
   }
@@ -1694,7 +1751,7 @@ async function enviarMensaje() {
     agregarMensaje('bot', data.reply);
 
     if (preguntasUsadas >= MAX_PREGUNTAS) {
-      agregarMensaje('bot', '💡 Has usado tus <strong>3 preguntas gratuitas</strong>. Para acceso ilimitado, <a href="https://dlogia.tech" target="_blank" style="color:#60a5fa">contáctanos en D\'LOGIA</a>.');
+      agregarMensaje('bot', '💡 Has usado tus <strong>3 preguntas gratuitas</strong>. Para acceso ilimitado, <a href="https://dlogia.tech" target="_blank" style="color:var(--tx-blue)">contáctanos en D\'LOGIA</a>.');
       habilitarInput(false);
     }
   } catch(e) {
