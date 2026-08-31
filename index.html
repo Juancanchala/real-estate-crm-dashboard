@@ -1557,11 +1557,16 @@ function formatBotMessage(text) {
   return html;
 }
 
-function buildContext() {
-  const k = DB.kpis;
-  return `Eres un asesor experto en CRM inmobiliario para D'LOGIA. Datos en tiempo real:
+// Detecta si la pregunta pide un reporte/panorama general vs. un dato puntual
+function esReporteGeneral(pregunta) {
+  return /reporte|informe|resumen (general|completo)|an[aá]lisis (general|completo)|panorama general|estado general|c[oó]mo (vamos|va(mos)?|estamos) en general|d[aá]me? (un )?(resumen|reporte|informe)/i.test(pregunta || '');
+}
 
-RESUMEN: Leads activos: ${k.leadsActivos}/${k.totalLeads}. Conversión: ${k.tasaConversion}%. Uds vendidas: ${k.totalVendidas}/${k.totalUnidades} (${k.pctVendido}%). Disponibles: ${k.totalDisponibles}. Cobrado: $${fmtM(k.totalCobrado)} COP. Pendiente: $${fmtM(k.totalPendiente)} COP. En mora: ${k.enMora}.
+function buildContext(pregunta) {
+  const k = DB.kpis;
+  const reporte = esReporteGeneral(pregunta);
+
+  const datos = `RESUMEN: Leads activos: ${k.leadsActivos}/${k.totalLeads}. Conversión: ${k.tasaConversion}%. Uds vendidas: ${k.totalVendidas}/${k.totalUnidades} (${k.pctVendido}%). Disponibles: ${k.totalDisponibles}. Cobrado: $${fmtM(k.totalCobrado)} COP. Pendiente: $${fmtM(k.totalPendiente)} COP. En mora: ${k.enMora}.
 
 PROYECTOS: ${DB.proyectos.map(p=>`${p.nombre}(${p.ciudad}): ${p.vendidas}/${p.total}uds, ${p.pctVendido}% vendido, ${p.disponibles} disponibles, $${(p.precioM2/1e6).toFixed(1)}M/m², ${p.estado}`).join(' | ')}
 
@@ -1571,14 +1576,28 @@ ASESORES: ${k.topAsesores.map((a,i)=>`${i+1}.${a.nombre}:${a.ganados}ganados/${a
 
 FUENTES: ${k.porFuente.map(f=>`${f.fuente}:${f.count}(${f.pct}%)`).join(', ')}
 
-FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length}, Pendiente:${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length}, Mora:${DB.financiero.filter(f=>f.estadoPago==='En mora').length}, Pagado:${DB.financiero.filter(f=>f.estadoPago==='Pagado').length}
+FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length}, Pendiente:${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length}, Mora:${DB.financiero.filter(f=>f.estadoPago==='En mora').length}, Pagado:${DB.financiero.filter(f=>f.estadoPago==='Pagado').length}`;
 
-FORMATO DE RESPUESTA OBLIGATORIO:
-- Responde en español
-- Usa un título corto en negrita (**Título**)
-- Lista los puntos clave con viñetas (• punto)
-- Resalta cifras importantes en negrita
-- Máximo 180 palabras, sin párrafos densos ni introducciones largas`;
+  const formatoReporte = `FORMATO DE RESPUESTA — SE PIDIÓ UN REPORTE/PANORAMA GENERAL:
+- El usuario quiere una vista completa: cubre ventas, cartera, pipeline y asesores
+- Organiza la respuesta en secciones, cada una con un título corto en negrita (**Título**)
+- Dentro de cada sección usa viñetas (• punto) para los datos relevantes
+- Resalta las cifras clave en negrita
+- Puedes extenderte lo necesario para ser completo, máximo 320 palabras`;
+
+  const formatoPuntual = `FORMATO DE RESPUESTA — ES UNA PREGUNTA PUNTUAL (no un reporte):
+- Responde ÚNICAMENTE lo que se pregunta, nada más
+- No enumeres datos que no se pidieron, no des un resumen del CRM completo
+- Si el dato es uno solo, respóndelo en 1-2 frases directas, sin título ni viñetas
+- Usa viñetas (• punto) solo si hay 2 o más elementos que listar
+- Resalta en negrita el dato o cifra clave
+- Máximo 60 palabras, cero relleno ni contexto no solicitado`;
+
+  return `Eres un asesor experto en CRM inmobiliario para D'LOGIA. Responde siempre en español. Datos en tiempo real:
+
+${datos}
+
+${reporte ? formatoReporte : formatoPuntual}`;
 }
 
 async function enviarMensaje() {
@@ -1610,9 +1629,10 @@ async function enviarMensaje() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: [
-          { role: 'system', content: buildContext() },
+          { role: 'system', content: buildContext(pregunta) },
           { role: 'user',   content: pregunta }
-        ]
+        ],
+        max_tokens: esReporteGeneral(pregunta) ? 650 : 180
       })
     });
 
