@@ -19,7 +19,7 @@ exports.handler = async function(event) {
 
     // El frontend pide menos tokens para preguntas puntuales y más para reportes generales.
     // Se limita entre 100 y 700 para evitar respuestas vacías o excesivamente largas/costosas.
-    const tokensPermitidos = Math.min(Math.max(Number(max_tokens) || 220, 100), 700);
+    const tokensPermitidos = Math.min(Math.max(Number(max_tokens) || 220, 100), 1000);
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
