@@ -65,6 +65,8 @@ function doPost(e) {
 
     if (body.action === "appendRows") {
       result = appendRows(ss, body.sheet, body.rows);
+    } else if (body.action === "replaceRows") {
+      result = replaceRows(ss, body.sheet, body.rows);
     } else if (body.action === "updateCells") {
       result = updateCells(ss, body.sheet, body.updates);
     } else {
@@ -98,6 +100,23 @@ function appendRows(ss, sheetKey, rows) {
   const coerced = rows.map(row => row.map(coerceValue));
   sheet.getRange(startRow, 1, coerced.length, coerced[0].length).setValues(coerced);
   return { sheet: sheetKey, startRow, count: coerced.length };
+}
+
+// Borra todos los datos existentes desde la fila 3 en adelante y escribe
+// las filas nuevas en su lugar (resincroniza la hoja completa).
+// body: { action:"replaceRows", sheet:"PIPELINE", rows:[[...],[...]] }
+function replaceRows(ss, sheetKey, rows) {
+  const sheet = ss.getSheetByName(SHEETS[sheetKey]);
+  if (!sheet) throw new Error("Hoja no encontrada: " + sheetKey);
+  if (!rows || !rows.length) throw new Error("rows vacío");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 3) {
+    sheet.getRange(3, 1, lastRow - 2, sheet.getLastColumn()).clearContent();
+  }
+  const coerced = rows.map(row => row.map(coerceValue));
+  sheet.getRange(3, 1, coerced.length, coerced[0].length).setValues(coerced);
+  return { sheet: sheetKey, count: coerced.length };
 }
 
 // Actualiza celdas puntuales de una hoja.
