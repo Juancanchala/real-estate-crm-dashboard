@@ -39,6 +39,79 @@ function doGet(e) {
 }
 
 // ============================================================
+// PUNTO DE ENTRADA — POST Request (escritura autenticada)
+// Requiere que exista una Script Property "API_SECRET" configurada en
+// Extensions > Apps Script > ⚙ Project Settings > Script Properties.
+// Nunca pongas el valor del secreto directamente en este archivo.
+// ============================================================
+function doPost(e) {
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  try {
+    const body = JSON.parse(e.postData.contents);
+    const secret = PropertiesService.getScriptProperties().getProperty("API_SECRET");
+
+    if (!secret) {
+      throw new Error("API_SECRET no configurado en Script Properties");
+    }
+    if (body.token !== secret) {
+      output.setContent(JSON.stringify({ error: "No autorizado" }));
+      return output;
+    }
+
+    const ss = SpreadsheetApp.openById(SS_ID);
+    let result;
+
+    if (body.action === "appendRows") {
+      result = appendRows(ss, body.sheet, body.rows);
+    } else if (body.action === "updateCells") {
+      result = updateCells(ss, body.sheet, body.updates);
+    } else {
+      throw new Error("Acción no reconocida: " + body.action);
+    }
+
+    output.setContent(JSON.stringify({ ok: true, result }));
+  } catch (err) {
+    output.setContent(JSON.stringify({ error: err.message }));
+  }
+
+  return output;
+}
+
+// Convierte strings "YYYY-MM-DD" a Date real; deja el resto igual.
+function coerceValue(v) {
+  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    return new Date(v + "T00:00:00");
+  }
+  return v;
+}
+
+// Agrega filas al final de los datos existentes de una hoja.
+// body: { action:"appendRows", sheet:"PIPELINE", rows:[[...],[...]] }
+function appendRows(ss, sheetKey, rows) {
+  const sheet = ss.getSheetByName(SHEETS[sheetKey]);
+  if (!sheet) throw new Error("Hoja no encontrada: " + sheetKey);
+  if (!rows || !rows.length) throw new Error("rows vacío");
+
+  const startRow = sheet.getLastRow() + 1;
+  const coerced = rows.map(row => row.map(coerceValue));
+  sheet.getRange(startRow, 1, coerced.length, coerced[0].length).setValues(coerced);
+  return { sheet: sheetKey, startRow, count: coerced.length };
+}
+
+// Actualiza celdas puntuales de una hoja.
+// body: { action:"updateCells", sheet:"PROYECTOS", updates:[{row:3,col:7,value:90}, ...] }
+function updateCells(ss, sheetKey, updates) {
+  const sheet = ss.getSheetByName(SHEETS[sheetKey]);
+  if (!sheet) throw new Error("Hoja no encontrada: " + sheetKey);
+  if (!updates || !updates.length) throw new Error("updates vacío");
+
+  updates.forEach(u => sheet.getRange(u.row, u.col).setValue(coerceValue(u.value)));
+  return { sheet: sheetKey, count: updates.length };
+}
+
+// ============================================================
 // PROYECTOS
 // ============================================================
 function getProyectos(ss) {
