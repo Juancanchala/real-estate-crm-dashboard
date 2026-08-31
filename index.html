@@ -1664,13 +1664,19 @@ function buildContext(pregunta) {
   const k = DB.kpis;
   const reporte = esReporteGeneral(pregunta);
 
+  // Valor real de las ventas GANADAS por asesor (no el total del pipeline completo)
+  const valorGanadoPorAsesor = {};
+  (DB.pipeline||[]).forEach(p => {
+    if (p.etapa === 'Ganado') valorGanadoPorAsesor[p.asesor] = (valorGanadoPorAsesor[p.asesor]||0) + p.valor;
+  });
+
   const datos = `RESUMEN: Prospectos activos: ${k.leadsActivos}/${k.totalLeads}. Conversión: ${k.tasaConversion}%. Uds vendidas: ${k.totalVendidas}/${k.totalUnidades} (${k.pctVendido}%). Disponibles: ${k.totalDisponibles}. Cobrado: $${fmtM(k.totalCobrado)} COP. Pendiente: $${fmtM(k.totalPendiente)} COP. En mora: ${k.enMora}.
 
 PROYECTOS: ${DB.proyectos.map(p=>`${p.nombre}(${p.ciudad}): ${p.vendidas}/${p.total}uds, ${p.pctVendido}% vendido, ${p.disponibles} disponibles, $${(p.precioM2/1e6).toFixed(1)}M/m², ${p.estado}`).join(' | ')}
 
 PROCESO DE VENTA: ${k.porEtapa.map(e=>`${e.etapa}:${e.count}($${fmtM(e.valor)})`).join(', ')}
 
-ASESORES: ${k.topAsesores.map((a,i)=>`${i+1}.${a.nombre}:${a.ganados}ganados/${a.total}total`).join(', ')}
+ASESORES: ${k.topAsesores.map((a,i)=>`${i+1}.${a.nombre}:${a.ganados}ganados/${a.total}total,valorVentasGanadas:$${fmtM(valorGanadoPorAsesor[a.nombre]||0)}COP`).join(', ')}
 
 FUENTES: ${k.porFuente.map(f=>`${f.fuente}:${f.count}(${f.pct}%)`).join(', ')}
 
@@ -1700,7 +1706,7 @@ ${reglaTabla}
 - Resalta en negrita el dato o cifra clave si no va en tabla
 - Máximo 60 palabras (sin contar la tabla), cero relleno ni contexto no solicitado`;
 
-  return `Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). Datos en tiempo real:
+  return `Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). REGLA CRÍTICA: usa ÚNICAMENTE las cifras que aparecen textualmente en los datos de abajo. Si te piden un dato que no está ahí (ej. un valor en dinero que no se lista), dilo explícitamente ("no tengo ese dato exacto") en vez de calcularlo, estimarlo o inventarlo. Nunca inventes cifras. Datos en tiempo real:
 
 ${datos}
 
