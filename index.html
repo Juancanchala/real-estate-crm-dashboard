@@ -1506,7 +1506,7 @@ const SUGERIDAS = [
   "¿Cuánto hay cobrado vs pendiente?"
 ];
 
-const MAX_PREGUNTAS = 3;
+const MAX_PREGUNTAS = 10;
 let preguntasUsadas = 0;
 let recognition = null;
 let isRecording = false;
@@ -1709,7 +1709,7 @@ ${reporte ? formatoReporte : formatoPuntual}`;
 
 async function enviarMensaje() {
   if (preguntasUsadas >= MAX_PREGUNTAS) {
-    agregarMensaje('bot', '🔒 Has usado tus <strong>3 preguntas gratuitas</strong>. ¿Quieres acceso completo? <a href="https://dlogia.tech" target="_blank" style="color:var(--tx-blue)">Contáctanos en D\'LOGIA</a>');
+    agregarMensaje('bot', `🔒 Has usado tus <strong>${MAX_PREGUNTAS} preguntas gratuitas</strong>. ¿Quieres acceso completo? <a href="https://dlogia.tech" target="_blank" style="color:var(--tx-blue)">Contáctanos en D'LOGIA</a>`);
     habilitarInput(false);
     return;
   }
@@ -1751,7 +1751,7 @@ async function enviarMensaje() {
     agregarMensaje('bot', data.reply);
 
     if (preguntasUsadas >= MAX_PREGUNTAS) {
-      agregarMensaje('bot', '💡 Has usado tus <strong>3 preguntas gratuitas</strong>. Para acceso ilimitado, <a href="https://dlogia.tech" target="_blank" style="color:var(--tx-blue)">contáctanos en D\'LOGIA</a>.');
+      agregarMensaje('bot', `💡 Has usado tus <strong>${MAX_PREGUNTAS} preguntas gratuitas</strong>. Para acceso ilimitado, <a href="https://dlogia.tech" target="_blank" style="color:var(--tx-blue)">contáctanos en D'LOGIA</a>.`);
       habilitarInput(false);
     }
   } catch(e) {
