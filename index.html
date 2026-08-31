@@ -646,7 +646,7 @@ aside {
       <div class="sec">Portafolio & Comercial</div>
       <div class="grid g3">
         <div class="card">
-          <div class="card-title">Pipeline por Etapa</div>
+          <div class="card-title">Negocios por Etapa</div>
           <div class="card-sub">Distribución de negocios activos</div>
           <div class="chart-wrap" style="height:200px"><canvas id="ch-ov-pipeline"></canvas></div>
         </div>
@@ -656,7 +656,7 @@ aside {
           <div id="ov-proyectos"></div>
         </div>
         <div class="card">
-          <div class="card-title">Leads por Fuente</div>
+          <div class="card-title">Prospectos por Fuente</div>
           <div class="card-sub">Canales de captación</div>
           <div class="chart-wrap" style="height:200px"><canvas id="ch-ov-fuentes"></canvas></div>
         </div>
@@ -726,7 +726,7 @@ aside {
           <div id="cli-funnel"></div>
         </div>
         <div class="card">
-          <div class="card-title">Leads por Fuente</div>
+          <div class="card-title">Prospectos por Fuente</div>
           <div class="card-sub">Efectividad de canales</div>
           <div class="chart-wrap" style="height:220px"><canvas id="ch-cli-fuentes"></canvas></div>
         </div>
@@ -739,7 +739,7 @@ aside {
           <input class="search-input" id="cli-search" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes()">
           <select class="filter-select" id="cli-filter-estado" onchange="filtrarClientes()">
             <option value="">Todos los estados</option>
-            <option>Nuevo lead</option><option>En contacto</option>
+            <option value="Nuevo lead">Nuevo prospecto</option><option>En contacto</option>
             <option>Propuesta enviada</option><option>Visita agendada</option>
             <option>Negociación</option><option>Ganado</option><option>Perdido</option>
           </select>
@@ -867,7 +867,7 @@ aside {
 <!-- ══════════════════════════════════════════════
      FLOATING AI ASSISTANT
 ══════════════════════════════════════════════ -->
-<button id="ai-fab" onclick="toggleAIPanel()" title="Asesor IA">
+<button id="ai-fab" onclick="toggleAIPanel()" title="Aura — Asistente D'LOGIA">
   <svg id="ai-fab-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
     <rect x="5" y="7" width="14" height="10" rx="2.5"/>
     <line x1="12" y1="7" x2="12" y2="4.5" stroke-linecap="round"/>
@@ -894,7 +894,7 @@ aside {
       </svg>
     </div>
     <div style="flex:1;min-width:0">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;white-space:nowrap">Asesor CRM — D'LOGIA</div>
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;white-space:nowrap">Aura — Asistente D'LOGIA</div>
       <div style="font-size:10.5px;color:var(--text3);display:flex;align-items:center;gap:4px">
         <span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span>
         En línea · GPT-4o mini
@@ -911,7 +911,7 @@ aside {
   <div class="aip-messages" id="ai-chat-messages">
     <div class="msg-bot">
       <div class="msg-bubble bot">
-        👋 Hola, soy tu <strong>Asesor IA</strong>. Tengo acceso en tiempo real a todos los datos del CRM.<br><br>
+        👋 Hola, soy <strong>Aura</strong>. Tengo acceso en tiempo real a todos los datos del CRM.<br><br>
         Puedes escribir o <strong>hablar</strong> usando el micrófono 🎙️
       </div>
     </div>
@@ -954,6 +954,11 @@ const ETAPA_C = {
   "Propuesta Económica":"#ea580c","Negociación":"#ca8a04","Cierre":"#2563eb",
   "Ganado":"#059669","Perdido":"#dc2626"
 };
+// Traducción de estados a lenguaje comercial (solo para mostrar; el valor real
+// de la hoja de cálculo sigue siendo "Nuevo lead" y no debe tocarse aquí,
+// para no romper los filtros/comparaciones contra los datos en vivo).
+const ESTADO_LABEL = { "Nuevo lead": "Nuevo prospecto" };
+const labelEstado = e => ESTADO_LABEL[e] || e;
 
 // ── SIDEBAR TOGGLE (mobile) ──
 function toggleSidebar() {
@@ -1028,7 +1033,7 @@ function renderAll() {
 function renderOverview() {
   const k = DB.kpis;
   document.getElementById('ov-kpis').innerHTML = [
-    {l:'Leads Activos',   v:k.leadsActivos,            s:`de ${k.totalLeads} total`,       c:'blue'},
+    {l:'Prospectos Activos', v:k.leadsActivos,         s:`de ${k.totalLeads} total`,       c:'blue'},
     {l:'Tasa Conversión', v:k.tasaConversion+'%',       s:`${k.leadsGanados} ganados`,      c:'green'},
     {l:'Uds. Vendidas',   v:k.totalVendidas,            s:`de ${k.totalUnidades} totales`,  c:'cyan'},
     {l:'Disponibles',     v:k.totalDisponibles,         s:`${k.totalReservadas} reservadas`,c:'purple'},
@@ -1061,7 +1066,7 @@ function renderOverview() {
   mkChart('ch-ov-fuentes','bar',f.map(x=>x.fuente),
     [{data:f.map(x=>x.count),backgroundColor:f.map((_,i)=>cols[i%cols.length]+'bb'),
       borderColor:f.map((_,i)=>cols[i%cols.length]),borderWidth:1,borderRadius:5}],
-    {indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} leads`}}},
+    {indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} prospectos`}}},
     scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#475569',font:{size:10}}},
     y:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}}}}
   );
@@ -1150,9 +1155,9 @@ function renderClientes() {
   const conv=pct(ganados,cl.length);
   document.getElementById('cli-kpis').innerHTML = [
     {l:'Total Clientes',    v:cl.length,  s:'en la base',c:'blue'},
-    {l:'Leads Activos',     v:activos,    s:'sin perder',c:'cyan'},
+    {l:'Prospectos Activos',v:activos,    s:'sin perder',c:'cyan'},
     {l:'Ganados',           v:ganados,    s:'clientes cerrados',c:'green'},
-    {l:'Tasa Conversión',   v:conv+'%',   s:`de ${cl.length} leads`,c:'orange'},
+    {l:'Tasa Conversión',   v:conv+'%',   s:`de ${cl.length} prospectos`,c:'orange'},
   ].map(kpiHTML).join('');
 
   // Funnel
@@ -1162,7 +1167,7 @@ function renderClientes() {
     const cnt=cl.filter(c=>c.estado===e).length;
     return `<div class="funnel-item">
       <div class="funnel-dot" style="background:${eColors[i]}"></div>
-      <div class="funnel-label">${e}</div>
+      <div class="funnel-label">${labelEstado(e)}</div>
       <div class="funnel-count" style="color:${eColors[i]}">${cnt}</div>
       <div class="funnel-val">${pct(cnt,cl.length)}%</div>
     </div>`;
@@ -1173,7 +1178,7 @@ function renderClientes() {
   mkChart('ch-cli-fuentes','doughnut',f.map(x=>x.fuente),
     [{data:f.map(x=>x.count),backgroundColor:f.map((_,i)=>cols2[i%cols2.length]),borderColor:'#0f1623',borderWidth:3}],
     {cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},padding:8,boxWidth:10}},
-    tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} leads (${c.dataset.data[c.dataIndex]} total)`}}}}
+    tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} prospectos (${c.dataset.data[c.dataIndex]} total)`}}}}
   );
 
   // Llenar filtro asesores
@@ -1189,7 +1194,7 @@ function renderTablaClientes(data) {
     const m={'Ganado':'b-ganado','Perdido':'b-perdido','Negociación':'b-negociacion',
       'Nuevo lead':'b-prospeccion','En contacto':'b-contacto','Propuesta enviada':'b-propuesta',
       'Visita agendada':'b-visita'};
-    return `<span class="badge ${m[e]||''}">${e}</span>`;
+    return `<span class="badge ${m[e]||''}">${labelEstado(e)}</span>`;
   };
   document.getElementById('cli-tbody').innerHTML = data.map(c=>`<tr>
     <td style="font-weight:600">${c.nombre}</td>
@@ -1427,7 +1432,7 @@ const SUGERIDAS = [
   "¿Cuál es la tasa de conversión actual?",
   "¿Cuáles proyectos están casi agotados?",
   "Dame un resumen ejecutivo del CRM",
-  "¿Qué etapa del pipeline tiene más negocios?",
+  "¿Qué etapa del proceso de venta tiene más negocios?",
   "¿Cuánto hay cobrado vs pendiente?"
 ];
 
@@ -1566,11 +1571,11 @@ function buildContext(pregunta) {
   const k = DB.kpis;
   const reporte = esReporteGeneral(pregunta);
 
-  const datos = `RESUMEN: Leads activos: ${k.leadsActivos}/${k.totalLeads}. Conversión: ${k.tasaConversion}%. Uds vendidas: ${k.totalVendidas}/${k.totalUnidades} (${k.pctVendido}%). Disponibles: ${k.totalDisponibles}. Cobrado: $${fmtM(k.totalCobrado)} COP. Pendiente: $${fmtM(k.totalPendiente)} COP. En mora: ${k.enMora}.
+  const datos = `RESUMEN: Prospectos activos: ${k.leadsActivos}/${k.totalLeads}. Conversión: ${k.tasaConversion}%. Uds vendidas: ${k.totalVendidas}/${k.totalUnidades} (${k.pctVendido}%). Disponibles: ${k.totalDisponibles}. Cobrado: $${fmtM(k.totalCobrado)} COP. Pendiente: $${fmtM(k.totalPendiente)} COP. En mora: ${k.enMora}.
 
 PROYECTOS: ${DB.proyectos.map(p=>`${p.nombre}(${p.ciudad}): ${p.vendidas}/${p.total}uds, ${p.pctVendido}% vendido, ${p.disponibles} disponibles, $${(p.precioM2/1e6).toFixed(1)}M/m², ${p.estado}`).join(' | ')}
 
-PIPELINE: ${k.porEtapa.map(e=>`${e.etapa}:${e.count}($${fmtM(e.valor)})`).join(', ')}
+PROCESO DE VENTA: ${k.porEtapa.map(e=>`${e.etapa}:${e.count}($${fmtM(e.valor)})`).join(', ')}
 
 ASESORES: ${k.topAsesores.map((a,i)=>`${i+1}.${a.nombre}:${a.ganados}ganados/${a.total}total`).join(', ')}
 
@@ -1579,7 +1584,7 @@ FUENTES: ${k.porFuente.map(f=>`${f.fuente}:${f.count}(${f.pct}%)`).join(', ')}
 FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length}, Pendiente:${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length}, Mora:${DB.financiero.filter(f=>f.estadoPago==='En mora').length}, Pagado:${DB.financiero.filter(f=>f.estadoPago==='Pagado').length}`;
 
   const formatoReporte = `FORMATO DE RESPUESTA — SE PIDIÓ UN REPORTE/PANORAMA GENERAL:
-- El usuario quiere una vista completa: cubre ventas, cartera, pipeline y asesores
+- El usuario quiere una vista completa: cubre ventas, cartera, proceso de venta y asesores
 - Organiza la respuesta en secciones, cada una con un título corto en negrita (**Título**)
 - Dentro de cada sección usa viñetas (• dato: cifra), datos secos, SIN frases explicativas ni interpretaciones ("lo que indica...", "reflejando...", etc.)
 - Resalta las cifras clave en negrita
@@ -1594,7 +1599,7 @@ FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length},
 - Resalta en negrita el dato o cifra clave
 - Máximo 60 palabras, cero relleno ni contexto no solicitado`;
 
-  return `Eres un asesor experto en CRM inmobiliario para D'LOGIA. Responde siempre en español. Datos en tiempo real:
+  return `Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). Datos en tiempo real:
 
 ${datos}
 
