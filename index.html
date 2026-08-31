@@ -480,6 +480,19 @@ aside {
   font-size:11px;color:var(--text3);margin-top:4px;
   padding-top:6px;border-top:1px solid var(--border);
 }
+.msg-bubble.bot .ai-table-wrap{
+  overflow-x:auto;margin:6px 0;border-radius:8px;
+  border:1px solid var(--border);
+}
+.msg-bubble.bot table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.msg-bubble.bot th{
+  background:var(--s3);color:var(--text);font-weight:700;
+  text-align:left;padding:5px 8px;white-space:nowrap;
+}
+.msg-bubble.bot td{
+  padding:5px 8px;border-top:1px solid var(--border);
+  color:var(--text2);white-space:nowrap;
+}
 
 /* ════════════════════════════════════
    RESPONSIVE — HAMBURGER & OVERLAY
@@ -1528,6 +1541,9 @@ function toggleMic() {
 }
 
 // ── Markdown-like formatter for bot responses ──
+const isTableRow = l => /^\|.*\|$/.test(l);
+const isTableSep = l => /^\|?[\s:|-]+\|?$/.test(l) && l.includes('-');
+
 function formatBotMessage(text) {
   text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
@@ -1542,9 +1558,28 @@ function formatBotMessage(text) {
     }
   };
 
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) { flushList(); continue; }
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (!line) { flushList(); i++; continue; }
+
+    // Tabla markdown: fila de encabezado + fila separadora (---)
+    if (isTableRow(line) && i + 1 < lines.length && isTableSep(lines[i + 1].trim())) {
+      flushList();
+      const head = line.slice(1, -1).split('|').map(c => c.trim());
+      let tbl = '<div class="ai-table-wrap"><table><thead><tr>' +
+        head.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+      i += 2;
+      while (i < lines.length && isTableRow(lines[i].trim())) {
+        const cells = lines[i].trim().slice(1, -1).split('|').map(c => c.trim());
+        tbl += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        i++;
+      }
+      tbl += '</tbody></table></div>';
+      html += tbl;
+      continue;
+    }
+
     if (/^[•\-]\s/.test(line)) {
       listItems.push(line.slice(2).trim());
     } else if (/^\d+\.\s/.test(line)) {
@@ -1557,6 +1592,7 @@ function formatBotMessage(text) {
         html += `<div class="ai-line">${line}</div>`;
       }
     }
+    i++;
   }
   flushList();
   return html;
@@ -1583,10 +1619,17 @@ FUENTES: ${k.porFuente.map(f=>`${f.fuente}:${f.count}(${f.pct}%)`).join(', ')}
 
 FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length}, Pendiente:${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length}, Mora:${DB.financiero.filter(f=>f.estadoPago==='En mora').length}, Pagado:${DB.financiero.filter(f=>f.estadoPago==='Pagado').length}`;
 
+  const reglaTabla = `- Si la respuesta incluye 3 o más categorías con cifras (etapas, asesores, proyectos, estados de pago, fuentes), preséntalas en una tabla markdown en vez de viñetas o prosa, así exactamente:
+| Categoría | Valor |
+|---|---|
+| dato | cifra |
+No agregues texto dentro de las celdas aparte del dato y la cifra.`;
+
   const formatoReporte = `FORMATO DE RESPUESTA — SE PIDIÓ UN REPORTE/PANORAMA GENERAL:
 - El usuario quiere una vista completa: cubre ventas, cartera, proceso de venta y asesores
 - Organiza la respuesta en secciones, cada una con un título corto en negrita (**Título**)
-- Dentro de cada sección usa viñetas (• dato: cifra), datos secos, SIN frases explicativas ni interpretaciones ("lo que indica...", "reflejando...", etc.)
+- Dentro de cada sección usa viñetas (• dato: cifra) para 1-2 datos sueltos, datos secos, SIN frases explicativas ni interpretaciones ("lo que indica...", "reflejando...", etc.)
+${reglaTabla}
 - Resalta las cifras clave en negrita
 - Prioriza completar TODAS las secciones de forma breve antes que extenderte en una sola; no dejes secciones a medias
 - Máximo 260 palabras en total`;
@@ -1595,9 +1638,10 @@ FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length},
 - Responde ÚNICAMENTE lo que se pregunta, nada más
 - No enumeres datos que no se pidieron, no des un resumen del CRM completo
 - Si el dato es uno solo, respóndelo en 1-2 frases directas, sin título ni viñetas
-- Usa viñetas (• punto) solo si hay 2 o más elementos que listar
-- Resalta en negrita el dato o cifra clave
-- Máximo 60 palabras, cero relleno ni contexto no solicitado`;
+- Usa viñetas (• punto) solo si hay 2 elementos que listar
+${reglaTabla}
+- Resalta en negrita el dato o cifra clave si no va en tabla
+- Máximo 60 palabras (sin contar la tabla), cero relleno ni contexto no solicitado`;
 
   return `Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). Datos en tiempo real:
 
