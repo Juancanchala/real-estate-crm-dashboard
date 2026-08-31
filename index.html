@@ -1693,9 +1693,10 @@ No agregues texto dentro de las celdas aparte del dato y la cifra.`;
 - Organiza la respuesta en secciones, cada una con un título corto en negrita (**Título**)
 - Dentro de cada sección usa viñetas (• dato: cifra) para 1-2 datos sueltos, datos secos, SIN frases explicativas ni interpretaciones ("lo que indica...", "reflejando...", etc.)
 ${reglaTabla}
+- Si una tabla tendría más de 6 filas (ej. lista de proyectos o de asesores), muestra SOLO las 5 más relevantes (mayor valor o mejor desempeño) y agrega una última fila u observación tipo "+N más" con el resto agregado. NUNCA dejes una tabla a medias
 - Resalta las cifras clave en negrita
-- Prioriza completar TODAS las secciones de forma breve antes que extenderte en una sola; no dejes secciones a medias
-- Máximo 260 palabras en total`;
+- Prioriza completar TODAS las secciones (incluida la última) de forma breve antes que extenderte en una sola; nunca cortes una sección ni una tabla a medias — si te vas a quedar sin espacio, resume mejor en vez de dejar algo incompleto
+- El límite de palabras aplica al texto fuera de las tablas; aun así sé conciso también dentro de ellas`;
 
   const formatoPuntual = `FORMATO DE RESPUESTA — ES UNA PREGUNTA PUNTUAL (no un reporte):
 - Responde ÚNICAMENTE lo que se pregunta, nada más
@@ -1745,7 +1746,7 @@ async function enviarMensaje() {
           { role: 'system', content: buildContext(pregunta) },
           { role: 'user',   content: pregunta }
         ],
-        max_tokens: esReporteGeneral(pregunta) ? 900 : 180
+        max_tokens: esReporteGeneral(pregunta) ? 1400 : 180
       })
     });
 
