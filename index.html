@@ -651,6 +651,17 @@ aside {
 .kb-move button:hover{border-color:var(--blue);color:var(--text);}
 .kb-hint{font-size:11px;color:var(--text3);margin:-6px 0 14px;}
 .kb-card{user-select:none;}
+.view-toggle{display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:2px;}
+.view-toggle button{background:none;border:none;color:var(--text2);padding:5px 12px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
+.view-toggle button.active{background:var(--s1);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+.kb-lista{display:none;padding:0;}
+.kb-lista.active{display:block;}
+.kb-lista .tbl th{cursor:pointer;user-select:none;white-space:nowrap;}
+.kb-lista .tbl th:hover{color:var(--text);}
+.kb-lista .tbl tbody tr{cursor:pointer;}
+.kb-lista .tbl td{white-space:nowrap;}
+.kb-etapa-sel{background:var(--s2);border:1px solid var(--border2);border-left:3px solid;color:var(--text);border-radius:6px;padding:4px 8px;font-family:'Outfit',sans-serif;font-size:11.5px;cursor:pointer;outline:none;}
+.kb-lista-foot{padding:12px 16px;font-size:11.5px;color:var(--text2);border-top:1px solid var(--border);}
 .kb-board.single .kb-col{flex:1 1 auto;max-height:none;}
 .kb-board.single .kb-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));align-content:start;max-height:none;}
 .modal-bg{position:fixed;inset:0;background:rgba(2,6,14,0.6);backdrop-filter:blur(3px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;}
@@ -929,10 +940,23 @@ aside {
         <select class="filter-select" id="kb-filter-asesor" onchange="renderKanban()"></select>
         <select class="filter-select" id="kb-filter-proy" onchange="renderKanban()"></select>
         <select class="filter-select" id="kb-filter-etapa" onchange="renderKanban()"></select>
-        <button class="btn btn-primary" style="margin-left:auto" onclick="abrirFormNegocio()">+ Nuevo negocio</button>
+        <div class="view-toggle" style="margin-left:auto" role="group" aria-label="Vista">
+          <button data-vista="kanban" onclick="cambiarVista('kanban')">▦ Tablero</button>
+          <button data-vista="lista" onclick="cambiarVista('lista')">☰ Lista</button>
+        </div>
+        <button class="btn btn-primary" onclick="abrirFormNegocio()">+ Nuevo negocio</button>
       </div>
-      <div class="kb-hint">Arrastra una tarjeta a otra etapa (o usa "Mover"). Haz clic en una tarjeta para editarla. Los cambios se guardan en Google Sheets.</div>
+      <div class="kb-hint" id="kb-hint"></div>
       <div class="kb-board" id="kb-board"></div>
+      <div class="card kb-lista" id="kb-lista">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr id="kb-thead"></tr></thead>
+            <tbody id="kb-tbody"></tbody>
+          </table>
+        </div>
+        <div class="kb-lista-foot" id="kb-lista-foot"></div>
+      </div>
     </div>
 
     <!-- ══════════════════════════════════════════════
@@ -1491,6 +1515,15 @@ function renderKanban() {
   );
 
   const board = document.getElementById('kb-board');
+  const enLista = kbVista === 'lista';
+  document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.toggle('active', b.dataset.vista===kbVista));
+  document.getElementById('kb-hint').textContent = enLista
+    ? 'Haz clic en una columna para ordenar y en una fila para editarla. Cambia la etapa desde la lista. Los cambios se guardan en Google Sheets.'
+    : 'Arrastra una tarjeta a otra etapa (o usa "Mover"). Haz clic en una tarjeta para editarla. Los cambios se guardan en Google Sheets.';
+  board.style.display = enLista ? 'none' : '';
+  document.getElementById('kb-lista').classList.toggle('active', enLista);
+  if (enLista) return renderListaNegocios(et ? visibles.filter(p=>p.etapa===et) : visibles);
+
   // Con una sola etapa la columna ocupa todo el ancho y las tarjetas van en cuadrícula
   board.classList.toggle('single', !!et);
   board.innerHTML = (et ? [et] : ETAPAS).map(e=>{
@@ -1507,6 +1540,63 @@ function renderKanban() {
       <div class="kb-cards">${items.length ? items.map(p=>kbCardHTML(p,cerrada)).join('') : '<div class="kb-empty">Sin negocios</div>'}</div>
     </div>`;
   }).join('');
+}
+
+// Vista lista: el tablero es la predeterminada; la elección se recuerda en este navegador
+let kbVista = (() => { try { return localStorage.getItem('crm-kb-vista') || 'kanban'; } catch (e) { return 'kanban'; } })();
+let kbOrden = { campo:'etapa', dir:1 };
+function cambiarVista(v) {
+  kbVista = v;
+  try { localStorage.setItem('crm-kb-vista', v); } catch (e) {}
+  renderKanban();
+}
+function ordenarLista(campo) {
+  kbOrden = kbOrden.campo === campo ? { campo, dir:-kbOrden.dir } : { campo, dir: ['valor','diasEtapa'].includes(campo) ? -1 : 1 };
+  renderKanban();
+}
+
+const COLS_LISTA = [
+  { campo:'id', txt:'ID' }, { campo:'cliente', txt:'Cliente' }, { campo:'proyecto', txt:'Proyecto' },
+  { campo:'asesor', txt:'Asesor' }, { campo:'etapa', txt:'Etapa' }, { campo:'valor', txt:'Valor' },
+  { campo:'diasEtapa', txt:'Días etapa' }, { campo:'fechaCierre', txt:'Cierre est.' },
+];
+
+function renderListaNegocios(items) {
+  const { campo, dir } = kbOrden;
+  const clave = p => campo==='etapa' ? ETAPAS.indexOf(p.etapa)
+    : campo==='proyecto' ? nombreProyecto(p.proyecto)
+    : campo==='fechaCierre' ? fechaAISO(p.fechaCierre)
+    : p[campo];
+  const filas = [...items].sort((a,b)=>{
+    const x = clave(a), y = clave(b);
+    const c = typeof x==='number' && typeof y==='number' ? x-y : String(x).localeCompare(String(y),'es');
+    // Desempate: los más estancados primero
+    return c*dir || b.diasEtapa-a.diasEtapa;
+  });
+
+  document.getElementById('kb-thead').innerHTML = COLS_LISTA.map(c=>
+    `<th onclick="ordenarLista('${c.campo}')">${c.txt}${c.campo===campo?(dir>0?' ▲':' ▼'):''}</th>`).join('');
+
+  document.getElementById('kb-tbody').innerHTML = filas.length ? filas.map(p=>{
+    const cerrada = p.etapa==='Ganado'||p.etapa==='Perdido';
+    const alerta = !cerrada && p.diasEtapa > 30;
+    return `<tr onclick="abrirFormNegocio('${p.id}')">
+      <td style="color:var(--text3);font-size:11px">${p.id}</td>
+      <td style="font-weight:600">${p.cliente}</td>
+      <td style="color:var(--text2b)">${nombreProyecto(p.proyecto)}${p.unidad?' · '+p.unidad:''}</td>
+      <td style="color:var(--text2)">${p.asesor}</td>
+      <td onclick="event.stopPropagation()">
+        <select class="kb-etapa-sel" style="border-left-color:${ETAPA_C[p.etapa]}" onchange="moverNegocio('${p.id}',this.value)">
+          ${ETAPAS.map(e=>`<option${e===p.etapa?' selected':''}>${e}</option>`).join('')}
+        </select></td>
+      <td style="font-family:'Syne',sans-serif;font-size:12px;color:var(--tx-blue)">${cop(p.valor)}</td>
+      <td style="${alerta?'color:var(--tx-red);font-weight:600':'color:var(--text2b)'}">${cerrada?'—':(alerta?'⚠ ':'')+p.diasEtapa+'d'}</td>
+      <td style="color:var(--text3);font-size:11px">${p.fechaCierre||'—'}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="${COLS_LISTA.length}" style="text-align:center;color:var(--text3);padding:24px">Sin negocios con estos filtros</td></tr>`;
+
+  const total = filas.reduce((s,p)=>s+p.valor,0);
+  document.getElementById('kb-lista-foot').textContent = `${filas.length} negocios · ${fmtM(total)} COP`;
 }
 
 function kbCardHTML(p, cerrada) {
