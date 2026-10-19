@@ -21,21 +21,35 @@ exports.handler = async function(event) {
     // Se limita entre 100 y 700 para evitar respuestas vacías o excesivamente largas/costosas.
     const tokensPermitidos = Math.min(Math.max(Number(max_tokens) || 220, 100), 1600);
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const llamarOpenAI = (body) => fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
       },
-      body: JSON.stringify({
+      body: JSON.stringify(body)
+    }).then(r => r.json());
+
+    // gpt-6-luna: modelo económico que OpenAI recomienda como reemplazo de gpt-4o-mini
+    // (gpt-4o-mini sale del API el 14/01/2027). reasoning_effort "none" lo mantiene
+    // rápido y evita que el razonamiento consuma los tokens de la respuesta.
+    let data = await llamarOpenAI({
+      model: "gpt-6-luna",
+      messages: messages,
+      max_completion_tokens: tokensPermitidos,
+      reasoning_effort: "none"
+    });
+
+    // Respaldo mientras gpt-4o-mini siga disponible
+    if (data.error && data.error.code !== "insufficient_quota" && data.error.code !== "invalid_api_key") {
+      console.error("gpt-6-luna falló, usando gpt-4o-mini:", data.error.message);
+      data = await llamarOpenAI({
         model: "gpt-4o-mini",
         messages: messages,
         max_tokens: tokensPermitidos,
         temperature: 0.4
-      })
-    });
-
-    const data = await response.json();
+      });
+    }
 
     if (data.error) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: data.error.message }) };
