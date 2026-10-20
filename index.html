@@ -2105,6 +2105,77 @@ function esReporteGeneral(pregunta) {
   return /reporte|informe|resumen (general|completo)|an[aá]lisis (general|completo)|panorama general|estado general|c[oó]mo (vamos|va(mos)?|estamos) en general|d[aá]me? (un )?(resumen|reporte|informe)/i.test(pregunta || '');
 }
 
+// Pide tablas, meses o proyecciones: necesita más espacio que una respuesta de 1-2 frases
+function esConsultaTabular(pregunta) {
+  return /tabla|por mes|mensual|meses|proyecci|tendencia|por asesor|por proyecto|cartera|mora|20\d\d/i.test(pregunta || '');
+}
+
+// Datos derivados del Sheets para Aura. Todo se calcula aquí (no en el modelo)
+// para que las cifras que responde sean exactas.
+function datosDetalle() {
+  const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const mesDe = f => { const m = /^\d{1,2}\/(\d{1,2})\/(\d{4})$/.exec(f||''); return m ? `${m[2]}-${m[1].padStart(2,'0')}` : null; };
+  const etqMes = k => { const [y,m] = k.split('-'); return `${MES[+m-1]}-${y}`; };
+  const M = n => `$${fmtM(n)}`;
+  const pipe = DB.pipeline || [], fin = DB.financiero || [];
+  const ganados = pipe.filter(p=>p.etapa==='Ganado');
+
+  // Ventas (negocios ganados) agrupadas por mes de cierre
+  const porMes = {};
+  ganados.forEach(p=>{
+    const k = mesDe(p.fechaCierre); if (!k) return;
+    const m = porMes[k] ||= { n:0, v:0, as:{}, pr:{} };
+    m.n++; m.v += p.valor;
+    (m.as[p.asesor] ||= { n:0, v:0 }).n++; m.as[p.asesor].v += p.valor;
+    const pn = nombreProyecto(p.proyecto);
+    (m.pr[pn] ||= { n:0, v:0 }).n++; m.pr[pn].v += p.valor;
+  });
+  const meses = Object.keys(porMes).sort();
+  const det = o => Object.entries(o).sort((a,b)=>b[1].v-a[1].v).map(([k,x])=>`${k} ${x.n}(${M(x.v)})`).join('; ');
+  const ventasMes = meses.map(k=>{ const m = porMes[k];
+    return `${etqMes(k)}: ${m.n} ventas, ${M(m.v)} | por asesor: ${det(m.as)} | por proyecto: ${det(m.pr)}`; }).join('\n');
+
+  // Proyección: promedio de los últimos 3 meses con ventas registradas × 3
+  const ult3 = meses.slice(-3);
+  let proyeccion = 'Sin datos suficientes';
+  if (ult3.length) {
+    const prom = (f) => ult3.reduce((s,k)=>s+f(porMes[k]),0)/ult3.length;
+    const pn = [...new Set(ganados.map(p=>nombreProyecto(p.proyecto)))];
+    proyeccion = `Método: promedio mensual de ${ult3.map(etqMes).join(', ')} (últimos 3 meses con ventas registradas), proyectado a los 3 meses siguientes. Es una ESTIMACIÓN.
+Total: promedio ${prom(m=>m.n).toFixed(1)} ventas/mes y ${M(prom(m=>m.v))}/mes → próximos 3 meses ≈ ${Math.round(prom(m=>m.n)*3)} ventas, ${M(prom(m=>m.v)*3)}
+Por proyecto: ${pn.map(n=>{ const c=prom(m=>(m.pr[n]||{n:0}).n), v=prom(m=>(m.pr[n]||{v:0}).v);
+      return `${n}: ${c.toFixed(1)} ventas/mes (${M(v)}/mes) → 3 meses ≈ ${Math.round(c*3)} ventas, ${M(v*3)}`; }).join('; ')}`;
+  }
+
+  // Negocios por proyecto según el proceso de venta
+  const porProy = (DB.proyectos||[]).map(pr=>{
+    const ns = pipe.filter(p=>p.proyecto===pr.id);
+    const g = ns.filter(p=>p.etapa==='Ganado'), per = ns.filter(p=>p.etapa==='Perdido');
+    const cur = ns.filter(p=>p.etapa!=='Ganado'&&p.etapa!=='Perdido');
+    const sum = a => a.reduce((s,p)=>s+p.valor,0);
+    return `${pr.nombre}: ${g.length} ganados (${M(sum(g))}), ${cur.length} en curso (${M(sum(cur))}), ${per.length} perdidos (${M(sum(per))})`;
+  }).join(' | ');
+
+  // Cartera con montos por estado y detalle de mora
+  const estados = [...new Set(fin.map(f=>f.estadoPago))];
+  const cartera = estados.map(e=>{ const fs = fin.filter(f=>f.estadoPago===e);
+    return `${e}: ${fs.length} pagos, valor total ${M(fs.reduce((s,f)=>s+f.valorTotal,0))}, pagado ${M(fs.reduce((s,f)=>s+f.valorPagado,0))}, pendiente ${M(fs.reduce((s,f)=>s+f.valorPendiente,0))}`; }).join(' | ');
+  const mora = fin.filter(f=>f.estadoPago==='En mora').sort((a,b)=>b.valorPendiente-a.valorPendiente)
+    .map(f=>`${f.cliente} (${nombreProyecto(f.proyecto)}, ${f.concepto}): pendiente ${M(f.valorPendiente)}, compromiso ${f.fechaCompromiso}, asesor ${f.asesor}`).join('; ');
+
+  return `VENTAS POR MES (negocios ganados según fecha de cierre; hay registros de ${meses.length?etqMes(meses[0]):'—'} a ${meses.length?etqMes(meses[meses.length-1]):'—'}; los meses que no aparecen no tienen ventas registradas):
+${ventasMes || 'Sin ventas registradas'}
+
+PROYECCIÓN:
+${proyeccion}
+
+NEGOCIOS POR PROYECTO (proceso de venta; distinto del conteo de unidades del inventario en PROYECTOS): ${porProy}
+
+CARTERA POR ESTADO: ${cartera}
+
+PAGOS EN MORA: ${mora || 'ninguno'}`;
+}
+
 function buildContext(pregunta) {
   const k = DB.kpis;
   const reporte = esReporteGeneral(pregunta);
@@ -2125,13 +2196,13 @@ ASESORES: ${k.topAsesores.map((a,i)=>`${i+1}.${a.nombre}:${a.ganados}ganados/${a
 
 FUENTES: ${k.porFuente.map(f=>`${f.fuente}:${f.count}(${f.pct}%)`).join(', ')}
 
-FINANCIERO: Al día:${DB.financiero.filter(f=>f.estadoPago==='Al día').length}, Pendiente:${DB.financiero.filter(f=>f.estadoPago==='Pendiente').length}, Mora:${DB.financiero.filter(f=>f.estadoPago==='En mora').length}, Pagado:${DB.financiero.filter(f=>f.estadoPago==='Pagado').length}`;
+${datosDetalle()}`;
 
-  const reglaTabla = `- Si la respuesta incluye 3 o más categorías con cifras (etapas, asesores, proyectos, estados de pago, fuentes), preséntalas en una tabla markdown en vez de viñetas o prosa, así exactamente:
-| Categoría | Valor |
-|---|---|
-| dato | cifra |
-No agregues texto dentro de las celdas aparte del dato y la cifra.`;
+  const reglaTabla = `- Si el usuario pide una tabla, o la respuesta incluye 3 o más categorías con cifras (etapas, asesores, proyectos, meses, estados de pago, fuentes), preséntalas en una tabla markdown en vez de viñetas o prosa. Puede tener varias columnas, por ejemplo:
+| Mes | Ventas | Valor |
+|---|---|---|
+| dato | cifra | cifra |
+No agregues texto dentro de las celdas aparte del dato y las cifras.`;
 
   const formatoReporte = `FORMATO DE RESPUESTA — SE PIDIÓ UN REPORTE/PANORAMA GENERAL:
 - El usuario quiere una vista completa: cubre ventas, cartera, proceso de venta y asesores
@@ -2152,7 +2223,9 @@ ${reglaTabla}
 - Resalta en negrita el dato o cifra clave si no va en tabla
 - Máximo 60 palabras (sin contar la tabla), cero relleno ni contexto no solicitado`;
 
-  return `Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). REGLA CRÍTICA: usa ÚNICAMENTE las cifras que aparecen textualmente en los datos de abajo. Si te piden un dato que no está ahí (ej. un valor en dinero que no se lista), dilo explícitamente ("no tengo ese dato exacto") en vez de calcularlo, estimarlo o inventarlo. Nunca inventes cifras. Datos en tiempo real:
+  const hoy = new Date().toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric' });
+  return `Fecha de hoy: ${hoy}.
+Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). REGLA CRÍTICA: usa ÚNICAMENTE las cifras que aparecen textualmente en los datos de abajo. Si te piden un dato que no está ahí (ej. un valor en dinero que no se lista), dilo explícitamente ("no tengo ese dato exacto") en vez de calcularlo, estimarlo o inventarlo. Nunca inventes cifras. Para proyecciones usa SOLO la sección PROYECCIÓN (ya calculada), di que es una estimación y en qué meses se basa. Si piden un periodo sin ventas registradas (ver el rango en VENTAS POR MES), dilo y ofrece el periodo más reciente que sí tiene datos. Datos en tiempo real:
 
 ${datos}
 
@@ -2191,7 +2264,7 @@ async function enviarMensaje() {
           { role: 'system', content: buildContext(pregunta) },
           { role: 'user',   content: pregunta }
         ],
-        max_tokens: esReporteGeneral(pregunta) ? 1400 : 180
+        max_tokens: esReporteGeneral(pregunta) ? 1400 : esConsultaTabular(pregunta) ? 700 : 180
       })
     });
 
