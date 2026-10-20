@@ -651,6 +651,11 @@ aside {
 .kb-move button:hover{border-color:var(--blue);color:var(--text);}
 .kb-hint{font-size:11px;color:var(--text3);margin:-6px 0 14px;}
 .kb-card{user-select:none;}
+.fila-mas td{text-align:center;padding:14px!important;}
+.fila-mas .btn{display:inline-flex;margin-right:10px;}
+.fila-mas span{font-size:11px;color:var(--text3);}
+.kb-ver-todos{background:none;border:1px dashed var(--border2);color:var(--tx-blue);border-radius:8px;padding:9px;font-family:'Outfit',sans-serif;font-size:11.5px;font-weight:600;cursor:pointer;}
+.kb-ver-todos:hover{border-color:var(--blue);}
 .view-toggle{display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:2px;}
 .view-toggle button{background:none;border:none;color:var(--text2);padding:5px 12px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
 .view-toggle button.active{background:var(--s1);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,0.15);}
@@ -1159,7 +1164,32 @@ function navigate(view, el) {
 
 // ── FORMAT ──
 const cop = n => n ? new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n) : '—';
-const fmtM = n => (n/1000000).toFixed(1)+'M';
+// Millones con separador colombiano: 41679774303 → "41.680M", 7500000 → "7,5M"
+const fmtM = n => { const m = (n||0)/1e6;
+  return (Math.abs(m) >= 100 ? Math.round(m).toLocaleString('es-CO')
+    : m.toLocaleString('es-CO',{minimumFractionDigits:1,maximumFractionDigits:1})) + 'M'; };
+
+// Tablas largas: se pintan de a 100 filas con un botón "Mostrar más"
+const FILAS_POR_PAGINA = 100;
+const tablas = {};
+// firma: opcional, identifica filtros + orden cuando el arreglo se recrea en cada render
+function pintarFilas(tbodyId, filas, filaHTML, columnas, firma) {
+  const t = tablas[tbodyId];
+  // Datos nuevos (otro filtro u orden) → vuelve a la primera página
+  const mismo = t && (firma !== undefined ? t.firma === firma : t.filas === filas);
+  const limite = mismo ? t.limite : FILAS_POR_PAGINA;
+  tablas[tbodyId] = { filas, filaHTML, columnas, limite, firma };
+  const resto = filas.length - limite;
+  document.getElementById(tbodyId).innerHTML = filas.slice(0, limite).map(filaHTML).join('') +
+    (resto > 0 ? `<tr class="fila-mas"><td colspan="${columnas}">
+      <button class="btn btn-ghost" onclick="verMasFilas('${tbodyId}')">Mostrar ${Math.min(resto, FILAS_POR_PAGINA)} más</button>
+      <span>${limite} de ${filas.length}</span></td></tr>` : '');
+}
+function verMasFilas(tbodyId) {
+  const t = tablas[tbodyId];
+  t.limite += FILAS_POR_PAGINA;
+  pintarFilas(tbodyId, t.filas, t.filaHTML, t.columnas, t.firma);
+}
 const pct = (a,b) => b>0 ? Math.round(a/b*100) : 0;
 
 // ── LOAD DATA ──
@@ -1219,9 +1249,9 @@ function renderOverview() {
 
   // Pipeline donut
   mkChart('ch-ov-pipeline','doughnut',
-    DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido').map(e=>e.etapa),
-    [{data:DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido').map(e=>e.count),
-      backgroundColor:DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido').map(e=>ETAPA_C[e.etapa]),
+    DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido'&&e.etapa!=='Ganado').map(e=>e.etapa),
+    [{data:DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido'&&e.etapa!=='Ganado').map(e=>e.count),
+      backgroundColor:DB.kpis.porEtapa.filter(e=>e.count>0&&e.etapa!=='Perdido'&&e.etapa!=='Ganado').map(e=>ETAPA_C[e.etapa]),
       borderColor:ct().surface,borderWidth:3}],
     {cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:ct().text2,font:{size:10},padding:10,boxWidth:10}},
     tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}`}}}}
@@ -1256,8 +1286,8 @@ function renderOverview() {
      {label:'Pendiente',data:pen,backgroundColor:'rgba(245,158,11,0.65)',borderColor:'#f59e0b',borderWidth:1,borderRadius:4}],
     {plugins:{legend:{labels:{color:ct().text2,font:{size:10},boxWidth:10}}},
     scales:{x:{grid:{display:false},ticks:{color:ct().text3,font:{size:9},maxRotation:30}},
-    y:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10},callback:v=>'$'+v+'M'}}},
-    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: $${c.raw.toFixed(1)}M`}}}
+    y:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10},callback:v=>'$'+Math.round(v).toLocaleString('es-CO')+'M'}}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: $${Math.round(c.raw).toLocaleString('es-CO')}M`}}}
   );
 
   // Asesores
@@ -1316,7 +1346,7 @@ function renderProyectos() {
   mkChart('ch-proy-precio','bar',pr.map(p=>p.nombre.split(' ').slice(0,1).join(' ')),
     [{data:pr.map(p=>p.precioM2/1e6),backgroundColor:'rgba(139,92,246,0.6)',borderColor:'#8b5cf6',borderWidth:1,borderRadius:5}],
     {indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` $${(c.raw).toFixed(1)}M/m²`}}},
-    scales:{x:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:9},callback:v=>'$'+v+'M'}},
+    scales:{x:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:9},callback:v=>'$'+Math.round(v).toLocaleString('es-CO')+'M'}},
     y:{grid:{display:false},ticks:{color:ct().text2,font:{size:9}}}}}
   );
 }
@@ -1326,12 +1356,13 @@ function renderProyectos() {
 // ══════════════════════════════════════════════
 function renderClientes() {
   const cl = DB.clientes;
-  const activos=cl.filter(c=>c.estado!=='Perdido').length;
+  // Igual que el KPI del API: activo = sigue en proceso (ni compró ni se descartó)
+  const activos=cl.filter(c=>c.estado!=='Perdido'&&c.estado!=='Ganado').length;
   const ganados=cl.filter(c=>c.estado==='Ganado').length;
   const conv=pct(ganados,cl.length);
   document.getElementById('cli-kpis').innerHTML = [
     {l:'Total Clientes',    v:cl.length,  s:'en la base',c:'blue'},
-    {l:'Prospectos Activos',v:activos,    s:'sin perder',c:'cyan'},
+    {l:'Prospectos Activos',v:activos,    s:'en proceso',c:'cyan'},
     {l:'Ganados',           v:ganados,    s:'clientes cerrados',c:'green'},
     {l:'Tasa Conversión',   v:conv+'%',   s:`de ${cl.length} prospectos`,c:'orange'},
   ].map(kpiHTML).join('');
@@ -1372,16 +1403,16 @@ function renderTablaClientes(data) {
       'Visita agendada':'b-visita'};
     return `<span class="badge ${m[e]||''}">${labelEstado(e)}</span>`;
   };
-  document.getElementById('cli-tbody').innerHTML = data.map(c=>`<tr>
+  pintarFilas('cli-tbody', data, c=>`<tr>
     <td style="font-weight:600">${c.nombre}</td>
     <td style="color:var(--text2b)">${c.ciudad}</td>
-    <td style="color:var(--text2)">${c.proyectoInteres}</td>
+    <td style="color:var(--text2)">${nombreProyecto(c.proyectoInteres)}</td>
     <td style="color:var(--text2b)">${c.fuente}</td>
     <td style="color:var(--text2)">${c.asesor}</td>
     <td>${badge(c.estado)}</td>
     <td style="color:var(--text3);font-size:11px">${c.fechaContacto}</td>
     <td style="color:var(--text3);font-size:11px">${c.fechaSeguimiento}</td>
-  </tr>`).join('');
+  </tr>`, 8);
 }
 
 function filtrarClientes() {
@@ -1445,7 +1476,7 @@ function renderNegocios() {
   const asesores=[...new Set(pipe.map(p=>p.asesor))].sort();
   const proyectos=[...new Set(pipe.map(p=>p.proyecto))].sort();
   document.getElementById('neg-filter-asesor').innerHTML='<option value="">Todos los asesores</option>'+asesores.map(a=>`<option>${a}</option>`).join('');
-  document.getElementById('neg-filter-proy').innerHTML='<option value="">Todos los proyectos</option>'+proyectos.map(p=>`<option>${p}</option>`).join('');
+  document.getElementById('neg-filter-proy').innerHTML='<option value="">Todos los proyectos</option>'+proyectos.map(p=>`<option value="${p}">${nombreProyecto(p)}</option>`).join('');
 
   renderTablaNegocios(pipe);
 }
@@ -1457,10 +1488,10 @@ function renderTablaNegocios(data) {
       'Contacto Inicial':'b-contacto','Prospección':'b-prospeccion'};
     return `<span class="badge ${m[e]||''}">${e}</span>`;
   };
-  document.getElementById('neg-tbody').innerHTML = data.map(p=>`<tr>
+  pintarFilas('neg-tbody', data, p=>`<tr>
     <td style="color:var(--text3);font-size:11px">${p.id}</td>
     <td style="font-weight:600">${p.cliente}</td>
-    <td style="color:var(--text2b)">${p.proyecto}</td>
+    <td style="color:var(--text2b)">${nombreProyecto(p.proyecto)}</td>
     <td style="color:var(--text2)">${p.asesor}</td>
     <td>${badge(p.etapa)}</td>
     <td style="font-family:'Syne',sans-serif;font-size:12px;color:var(--tx-blue)">${cop(p.valor)}</td>
@@ -1468,7 +1499,7 @@ function renderTablaNegocios(data) {
     <td style="color:var(--text3);font-size:11px">${p.fechaApertura}</td>
     <td style="color:var(--text3);font-size:11px">${p.fechaCierre}</td>
     <td style="color:var(--text2b)">${p.diasEtapa}d</td>
-  </tr>`).join('');
+  </tr>`, 10);
 }
 
 function filtrarNegocios() {
@@ -1531,16 +1562,23 @@ function renderKanban() {
   board.classList.toggle('single', !!et);
   board.innerHTML = (et ? [et] : ETAPAS).map(e=>{
     // Los negocios más estancados primero, para que el asesor los vea
-    const items = visibles.filter(p=>p.etapa===e).sort((a,b)=>b.diasEtapa-a.diasEtapa);
-    const val = items.reduce((s,p)=>s+p.valor,0);
     const cerrada = e==='Ganado'||e==='Perdido';
+    // Activas: los más estancados primero. Cerradas: los más recientes primero, solo los últimos 30
+    // (son cientos; el detalle completo está en la vista Lista)
+    const items = visibles.filter(p=>p.etapa===e).sort(cerrada
+      ? (a,b)=>fechaAISO(b.fechaCierre).localeCompare(fechaAISO(a.fechaCierre))
+      : (a,b)=>b.diasEtapa-a.diasEtapa);
+    const val = items.reduce((s,p)=>s+p.valor,0);
+    const mostrados = cerrada ? items.slice(0, KB_MAX_CERRADOS) : items;
+    const verTodos = items.length > mostrados.length
+      ? `<button class="kb-ver-todos" onclick="verEtapaEnLista('${e}')">Ver los ${items.length} en la lista →</button>` : '';
     return `<div class="kb-col" data-etapa="${e}"
         ondragover="kbOver(event)" ondragleave="kbLeave(event)" ondrop="kbDrop(event)">
       <div class="kb-col-head">
         <div class="kb-col-title"><span class="dot" style="background:${ETAPA_C[e]}"></span>${e}<span class="count">${items.length}</span></div>
         <div class="kb-col-val">${fmtM(val)} COP</div>
       </div>
-      <div class="kb-cards">${items.length ? items.map(p=>kbCardHTML(p,cerrada)).join('') : '<div class="kb-empty">Sin negocios</div>'}</div>
+      <div class="kb-cards">${items.length ? mostrados.map(p=>kbCardHTML(p,cerrada)).join('') + verTodos : '<div class="kb-empty">Sin negocios</div>'}</div>
     </div>`;
   }).join('');
 }
@@ -1548,6 +1586,13 @@ function renderKanban() {
 // Vista lista: el tablero es la predeterminada; la elección se recuerda en este navegador
 let kbVista = (() => { try { return localStorage.getItem('crm-kb-vista') || 'kanban'; } catch (e) { return 'kanban'; } })();
 let kbOrden = { campo:'etapa', dir:1 };
+const KB_MAX_CERRADOS = 30;
+function verEtapaEnLista(etapa) {
+  document.getElementById('kb-filter-etapa').value = etapa;
+  // Más recientes primero, igual que en la columna del tablero
+  kbOrden = { campo:'fechaCierre', dir:-1 };
+  cambiarVista('lista');
+}
 function cambiarVista(v) {
   kbVista = v;
   try { localStorage.setItem('crm-kb-vista', v); } catch (e) {}
@@ -1584,7 +1629,10 @@ function renderListaNegocios(items) {
   document.getElementById('kb-thead').innerHTML = COLS_LISTA.map(c=>
     `<th onclick="ordenarLista('${c.campo}')">${c.txt}${c.campo===campo?(dir>0?' ▲':' ▼'):''}</th>`).join('');
 
-  document.getElementById('kb-tbody').innerHTML = filas.length ? filas.map(p=>{
+  // La lista se re-ordena en cada render: la firma (filtros + orden) decide si se conserva la página
+  const firma = [document.getElementById('kb-search').value, document.getElementById('kb-filter-asesor').value,
+    document.getElementById('kb-filter-proy').value, document.getElementById('kb-filter-etapa').value, campo, dir].join('|');
+  if (filas.length) { pintarFilas('kb-tbody', filas, p=>{
     const cerrada = p.etapa==='Ganado'||p.etapa==='Perdido';
     const alerta = !cerrada && p.diasEtapa > 30;
     return `<tr onclick="abrirFormNegocio('${p.id}')">
@@ -1600,7 +1648,10 @@ function renderListaNegocios(items) {
       <td style="${alerta?'color:var(--tx-red);font-weight:600':'color:var(--text2b)'}">${cerrada?'—':(alerta?'⚠ ':'')+p.diasEtapa+'d'}</td>
       <td style="color:var(--text3);font-size:11px">${p.fechaCierre||'—'}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="${COLS_LISTA.length}" style="text-align:center;color:var(--text3);padding:24px">Sin negocios con estos filtros</td></tr>`;
+  }, COLS_LISTA.length, firma);
+  } else {
+    document.getElementById('kb-tbody').innerHTML = `<tr><td colspan="${COLS_LISTA.length}" style="text-align:center;color:var(--text3);padding:24px">Sin negocios con estos filtros</td></tr>`;
+  }
 
   const total = filas.reduce((s,p)=>s+p.valor,0);
   document.getElementById('kb-lista-foot').textContent = `${filas.length} negocios · ${fmtM(total)} COP`;
@@ -1775,7 +1826,7 @@ async function guardarNegocio(id) {
     } else {
       // Siguiente consecutivo NEG-### según el mayor ID existente
       const max = Math.max(0, ...DB.pipeline.map(p=>parseInt(String(p.id).replace(/\D/g,''),10)||0));
-      id = 'NEG-' + String(max+1).padStart(3,'0');
+      id = 'NEG-' + String(max+1).padStart(4,'0');
       const apertura = hoyISO();
       // Orden de columnas A–L de la hoja Pipeline
       await escribirSheets({ action:'appendRows', sheet:'PIPELINE', rows:[[
@@ -1850,7 +1901,7 @@ function renderFinanciero() {
      {label:'Pendiente',data:pen,backgroundColor:'rgba(245,158,11,0.7)',borderColor:'#f59e0b',borderWidth:1,borderRadius:4}],
     {plugins:{legend:{labels:{color:ct().text2,font:{size:10},boxWidth:10}}},
     scales:{x:{grid:{display:false},ticks:{color:ct().text3,font:{size:9},maxRotation:30}},
-    y:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10},callback:v=>'$'+v+'M'}}}}
+    y:{grid:{color:ct().grid},ticks:{color:ct().text3,font:{size:10},callback:v=>'$'+Math.round(v).toLocaleString('es-CO')+'M'}}}}
   );
 
   // Donut estado
@@ -1864,7 +1915,7 @@ function renderFinanciero() {
 
   // Filtros
   const proyectos=[...new Set(fin.map(f=>f.proyecto))].sort();
-  document.getElementById('fin-filter-proy').innerHTML='<option value="">Todos los proyectos</option>'+proyectos.map(p=>`<option>${p}</option>`).join('');
+  document.getElementById('fin-filter-proy').innerHTML='<option value="">Todos los proyectos</option>'+proyectos.map(p=>`<option value="${p}">${nombreProyecto(p)}</option>`).join('');
 
   renderTablaFinanciero(fin);
 }
@@ -1874,10 +1925,10 @@ function renderTablaFinanciero(data) {
     const m={'Al día':'b-aldia','En mora':'b-mora','Pendiente':'b-pendiente','Pagado':'b-pagado'};
     return `<span class="badge ${m[e]||''}">${e}</span>`;
   };
-  document.getElementById('fin-tbody').innerHTML = data.map(f=>`<tr>
+  pintarFilas('fin-tbody', data, f=>`<tr>
     <td style="color:var(--text3);font-size:11px">${f.id}</td>
     <td style="font-weight:600">${f.cliente}</td>
-    <td style="color:var(--text2b)">${f.proyecto}</td>
+    <td style="color:var(--text2b)">${nombreProyecto(f.proyecto)}</td>
     <td style="color:var(--text2)">${f.concepto}</td>
     <td style="font-family:'Syne',sans-serif;font-size:12px;color:var(--text)">${cop(f.valorTotal)}</td>
     <td style="color:var(--tx-green)">${cop(f.valorPagado)}</td>
@@ -1888,7 +1939,7 @@ function renderTablaFinanciero(data) {
     </td>
     <td>${badge(f.estadoPago)}</td>
     <td style="color:var(--text3);font-size:11px">${f.fechaCompromiso}</td>
-  </tr>`).join('');
+  </tr>`, 10);
 }
 
 function filtrarFinanciero() {
@@ -2110,70 +2161,96 @@ function esConsultaTabular(pregunta) {
   return /tabla|por mes|mensual|meses|proyecci|tendencia|por asesor|por proyecto|cartera|mora|20\d\d/i.test(pregunta || '');
 }
 
-// Datos derivados del Sheets para Aura. Todo se calcula aquí (no en el modelo)
-// para que las cifras que responde sean exactas.
-function datosDetalle() {
+// Datos para Aura, tomados de las hojas 📊 de resumen del Sheets (fórmulas QUERY).
+// Aquí solo se agrupan y se redactan: Aura no hace cuentas, así no inventa cifras.
+// El detalle mensual por asesor/proyecto solo va cuando la pregunta lo necesita.
+function datosDetalle(pregunta) {
   const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  const mesDe = f => { const m = /^\d{1,2}\/(\d{1,2})\/(\d{4})$/.exec(f||''); return m ? `${m[2]}-${m[1].padStart(2,'0')}` : null; };
-  const etqMes = k => { const [y,m] = k.split('-'); return `${MES[+m-1]}-${y}`; };
+  const etq = k => { const [y,m] = k.split('-'); return `${MES[+m-1]}-${y}`; };
   const M = n => `$${fmtM(n)}`;
-  const pipe = DB.pipeline || [], fin = DB.financiero || [];
-  const ganados = pipe.filter(p=>p.etapa==='Ganado');
+  const R = DB.resumen || {};
+  const ventas = R.ventas || [], embudo = R.embudo || [], cartera = R.cartera || [], prosp = R.prospectos || [];
+  if (!ventas.length) return 'RESÚMENES: no disponibles en este momento.';
 
-  // Ventas (negocios ganados) agrupadas por mes de cierre
-  const porMes = {};
-  ganados.forEach(p=>{
-    const k = mesDe(p.fechaCierre); if (!k) return;
-    const m = porMes[k] ||= { n:0, v:0, as:{}, pr:{} };
-    m.n++; m.v += p.valor;
-    (m.as[p.asesor] ||= { n:0, v:0 }).n++; m.as[p.asesor].v += p.valor;
-    const pn = nombreProyecto(p.proyecto);
-    (m.pr[pn] ||= { n:0, v:0 }).n++; m.pr[pn].v += p.valor;
-  });
+  // Agrupar las filas del resumen (mes × proyecto × asesor) por la clave que se pida
+  const agrupar = (filas, clave) => filas.reduce((o, r) => {
+    const k = clave(r); const x = o[k] ||= { n:0, v:0 }; x.n += r.Ventas; x.v += r.Valor; return o; }, {});
+  const kMes = r => `${r['Año']}-${String(r.Mes).padStart(2,'0')}`;
+  const porMes = agrupar(ventas, kMes);
   const meses = Object.keys(porMes).sort();
-  const det = o => Object.entries(o).sort((a,b)=>b[1].v-a[1].v).map(([k,x])=>`${k} ${x.n}(${M(x.v)})`).join('; ');
-  const ventasMes = meses.map(k=>{ const m = porMes[k];
-    return `${etqMes(k)}: ${m.n} ventas, ${M(m.v)} | por asesor: ${det(m.as)} | por proyecto: ${det(m.pr)}`; }).join('\n');
+  const desde = etq(meses[0]), hasta = etq(meses[meses.length-1]);
+  const linea = (o, orden = (a,b)=>b[1].v-a[1].v) => Object.entries(o).sort(orden)
+    .map(([k,x])=>`${k}: ${x.n} ventas, ${M(x.v)}`).join(' | ');
+  const cronologico = (a,b)=>a[0].localeCompare(b[0]);
 
-  // Proyección: promedio de los últimos 3 meses con ventas registradas × 3
-  const ult3 = meses.slice(-3);
-  let proyeccion = 'Sin datos suficientes';
-  if (ult3.length) {
-    const prom = (f) => ult3.reduce((s,k)=>s+f(porMes[k]),0)/ult3.length;
-    const pn = [...new Set(ganados.map(p=>nombreProyecto(p.proyecto)))];
-    proyeccion = `Método: promedio mensual de ${ult3.map(etqMes).join(', ')} (últimos 3 meses con ventas registradas), proyectado a los 3 meses siguientes. Es una ESTIMACIÓN.
-Total: promedio ${prom(m=>m.n).toFixed(1)} ventas/mes y ${M(prom(m=>m.v))}/mes → próximos 3 meses ≈ ${Math.round(prom(m=>m.n)*3)} ventas, ${M(prom(m=>m.v)*3)}
-Por proyecto: ${pn.map(n=>{ const c=prom(m=>(m.pr[n]||{n:0}).n), v=prom(m=>(m.pr[n]||{v:0}).v);
-      return `${n}: ${c.toFixed(1)} ventas/mes (${M(v)}/mes) → 3 meses ≈ ${Math.round(c*3)} ventas, ${M(v*3)}`; }).join('; ')}`;
+  const porAnio = agrupar(ventas, r => r['Año'] === 2026 ? '2026 (ene–jun)' : String(r['Año']));
+  const porSem = agrupar(ventas, r => `${r['Año']}-S${r.Mes <= 6 ? 1 : 2}`);
+  const anios = [...new Set(ventas.map(r=>r['Año']))];
+  const porProyAnio = anios.map(y => `${y}: ` + linea(agrupar(ventas.filter(r=>r['Año']===y), r=>nombreProyecto(r.Proyecto)))).join('\n');
+  const porAsesorAnio = anios.map(y => `${y}: ` + linea(agrupar(ventas.filter(r=>r['Año']===y), r=>r.Asesor))).join('\n');
+  const mensual = meses.map(k => `${etq(k)}: ${porMes[k].n} ventas, ${M(porMes[k].v)}`).join(' | ');
+
+  let detalle = '';
+  if (esConsultaTabular(pregunta) || esReporteGeneral(pregunta)) {
+    detalle = '\n\nDETALLE MENSUAL (por asesor y por proyecto):\n' + meses.map(k => {
+      const filas = ventas.filter(r => kMes(r) === k);
+      return `${etq(k)} | asesores: ${linea(agrupar(filas, r=>r.Asesor))} || proyectos: ${linea(agrupar(filas, r=>nombreProyecto(r.Proyecto)))}`;
+    }).join('\n');
   }
 
-  // Negocios por proyecto según el proceso de venta
-  const porProy = (DB.proyectos||[]).map(pr=>{
-    const ns = pipe.filter(p=>p.proyecto===pr.id);
-    const g = ns.filter(p=>p.etapa==='Ganado'), per = ns.filter(p=>p.etapa==='Perdido');
-    const cur = ns.filter(p=>p.etapa!=='Ganado'&&p.etapa!=='Perdido');
-    const sum = a => a.reduce((s,p)=>s+p.valor,0);
-    return `${pr.nombre}: ${g.length} ganados (${M(sum(g))}), ${cur.length} en curso (${M(sum(cur))}), ${per.length} perdidos (${M(sum(per))})`;
+  // Proyección: promedio de los 3 últimos meses con datos × 3 (estimación)
+  const ult3 = meses.slice(-3);
+  const filasUlt3 = ventas.filter(r => ult3.includes(kMes(r)));
+  const tot3 = agrupar(filasUlt3, () => 'total').total;
+  const proy3 = agrupar(filasUlt3, r => nombreProyecto(r.Proyecto));
+  const proyeccion = `Método: promedio mensual de ${ult3.map(etq).join(', ')} (últimos 3 meses con datos) multiplicado por 3. Es una ESTIMACIÓN para los 3 meses siguientes al corte.
+Total: ${(tot3.n/3).toFixed(1)} ventas/mes y ${M(tot3.v/3)}/mes → ≈ ${Math.round(tot3.n)} ventas, ${M(tot3.v)} en 3 meses
+Por proyecto: ${Object.entries(proy3).sort((a,b)=>b[1].v-a[1].v).map(([n,x])=>`${n}: ${(x.n/3).toFixed(1)} ventas/mes → ≈ ${Math.round(x.n)} ventas, ${M(x.v)} en 3 meses`).join(' | ')}`;
+
+  // Proceso de venta por proyecto (resumen Embudo)
+  const ABIERTAS = ['Prospección','Contacto Inicial','Visita Inmueble','Propuesta Económica','Negociación','Cierre'];
+  const proyIds = [...new Set(embudo.map(r=>r.Proyecto))];
+  const procProy = proyIds.map(id => {
+    const fs = embudo.filter(r=>r.Proyecto===id);
+    const sum = (f, c) => fs.filter(f).reduce((s,r)=>s+r[c],0);
+    const ab = r => ABIERTAS.includes(r.Etapa);
+    return `${nombreProyecto(id)}: ${sum(r=>r.Etapa==='Ganado','Negocios')} ganados, ${sum(ab,'Negocios')} en curso (${M(sum(ab,'Valor'))}), ${sum(r=>r.Etapa==='Perdido','Negocios')} perdidos`;
   }).join(' | ');
 
-  // Cartera con montos por estado y detalle de mora
-  const estados = [...new Set(fin.map(f=>f.estadoPago))];
-  const cartera = estados.map(e=>{ const fs = fin.filter(f=>f.estadoPago===e);
-    return `${e}: ${fs.length} pagos, valor total ${M(fs.reduce((s,f)=>s+f.valorTotal,0))}, pagado ${M(fs.reduce((s,f)=>s+f.valorPagado,0))}, pendiente ${M(fs.reduce((s,f)=>s+f.valorPendiente,0))}`; }).join(' | ');
-  const mora = fin.filter(f=>f.estadoPago==='En mora').sort((a,b)=>b.valorPendiente-a.valorPendiente)
-    .map(f=>`${f.cliente} (${nombreProyecto(f.proyecto)}, ${f.concepto}): pendiente ${M(f.valorPendiente)}, compromiso ${f.fechaCompromiso}, asesor ${f.asesor}`).join('; ');
+  // Cartera (resumen Cartera) por estado y por concepto
+  const sumCart = clave => Object.entries(cartera.reduce((o,r)=>{ const x = o[clave(r)] ||= {p:0,t:0,pa:0,pe:0};
+    x.p+=r.Pagos; x.t+=r.ValorTotal; x.pa+=r.Pagado; x.pe+=r.Pendiente; return o; }, {}))
+    .map(([k,x])=>`${k}: ${x.p} pagos, total ${M(x.t)}, pagado ${M(x.pa)}, pendiente ${M(x.pe)}`).join(' | ');
+  const mora = (DB.financiero||[]).filter(f=>f.estadoPago==='En mora').sort((a,b)=>b.valorPendiente-a.valorPendiente);
+  const moraTop = mora.slice(0,10).map(f=>`${f.cliente} (${nombreProyecto(f.proyecto)}, ${f.concepto}): pendiente ${M(f.valorPendiente)}, compromiso ${f.fechaCompromiso}, asesor ${f.asesor}`).join('; ');
+  const moraResto = mora.slice(10);
 
-  return `VENTAS POR MES (negocios ganados según fecha de cierre; hay registros de ${meses.length?etqMes(meses[0]):'—'} a ${meses.length?etqMes(meses[meses.length-1]):'—'}; los meses que no aparecen no tienen ventas registradas):
-${ventasMes || 'Sin ventas registradas'}
+  // Prospectos por fuente (resumen Prospectos, columnas = estados)
+  const fuentes = prosp.map(r => { const tot = Object.entries(r).filter(([k])=>k!=='Fuente').reduce((s,[,v])=>s+v,0);
+    return `${r.Fuente}: ${tot} prospectos, ${r.Ganado||0} compraron (${Math.round((r.Ganado||0)/tot*100)}%)`; }).join(' | ');
+
+  return `RANGO DE DATOS: ventas registradas de ${desde} a ${hasta} (fecha de corte). No hay datos después de ${hasta}.
+
+VENTAS POR AÑO: ${linea(porAnio, cronologico)}
+VENTAS POR SEMESTRE: ${linea(porSem, cronologico)}
+VENTAS POR MES: ${mensual}
+
+VENTAS POR PROYECTO Y AÑO:
+${porProyAnio}
+
+VENTAS POR ASESOR Y AÑO:
+${porAsesorAnio}${detalle}
 
 PROYECCIÓN:
 ${proyeccion}
 
-NEGOCIOS POR PROYECTO (proceso de venta; distinto del conteo de unidades del inventario en PROYECTOS): ${porProy}
+PROCESO DE VENTA POR PROYECTO: ${procProy}
 
-CARTERA POR ESTADO: ${cartera}
+CARTERA POR ESTADO: ${sumCart(r=>r.Estado)}
+CARTERA POR CONCEPTO: ${sumCart(r=>r.Concepto)}
+PAGOS EN MORA (${mora.length}): mayores 10 → ${moraTop || 'ninguno'}${moraResto.length ? ` | otros ${moraResto.length} pagos en mora suman ${M(moraResto.reduce((s,f)=>s+f.valorPendiente,0))} pendiente` : ''}
 
-PAGOS EN MORA: ${mora || 'ninguno'}`;
+PROSPECTOS POR FUENTE: ${fuentes}`;
 }
 
 function buildContext(pregunta) {
@@ -2196,7 +2273,7 @@ ASESORES: ${k.topAsesores.map((a,i)=>`${i+1}.${a.nombre}:${a.ganados}ganados/${a
 
 FUENTES: ${k.porFuente.map(f=>`${f.fuente}:${f.count}(${f.pct}%)`).join(', ')}
 
-${datosDetalle()}`;
+${datosDetalle(pregunta)}`;
 
   const reglaTabla = `- Si el usuario pide una tabla, o la respuesta incluye 3 o más categorías con cifras (etapas, asesores, proyectos, meses, estados de pago, fuentes), preséntalas en una tabla markdown en vez de viñetas o prosa. Puede tener varias columnas, por ejemplo:
 | Mes | Ventas | Valor |
@@ -2225,7 +2302,7 @@ ${reglaTabla}
 
   const hoy = new Date().toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric' });
   return `Fecha de hoy: ${hoy}.
-Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). REGLA CRÍTICA: usa ÚNICAMENTE las cifras que aparecen textualmente en los datos de abajo. Si te piden un dato que no está ahí (ej. un valor en dinero que no se lista), dilo explícitamente ("no tengo ese dato exacto") en vez de calcularlo, estimarlo o inventarlo. Nunca inventes cifras. Para proyecciones usa SOLO la sección PROYECCIÓN (ya calculada), di que es una estimación y en qué meses se basa. Si piden un periodo sin ventas registradas (ver el rango en VENTAS POR MES), dilo y ofrece el periodo más reciente que sí tiene datos. Datos en tiempo real:
+Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). REGLA CRÍTICA: usa ÚNICAMENTE las cifras que aparecen textualmente en los datos de abajo. Si te piden un dato que no está ahí (ej. un valor en dinero que no se lista), dilo explícitamente ("no tengo ese dato exacto") en vez de calcularlo, estimarlo o inventarlo. Nunca inventes cifras. Para proyecciones usa SOLO la sección PROYECCIÓN (ya calculada), di que es una estimación y en qué meses se basa. Los datos tienen fecha de corte (ver RANGO DE DATOS): si piden "los últimos meses", "este año" o un periodo posterior al corte, aclara la fecha de corte y responde con los meses más recientes que sí tienen datos. Nunca supongas que un mes sin datos tuvo cero ventas si es posterior al corte. Las cifras de VENTAS son datos reales registrados: solo la sección PROYECCIÓN es una estimación. Datos en tiempo real:
 
 ${datos}
 

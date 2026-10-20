@@ -159,9 +159,11 @@ function doPost(e) {
 }
 
 // Convierte strings "YYYY-MM-DD" a Date real; deja el resto igual.
+// Al mediodía y no a medianoche: si la zona horaria del script y la del Sheets
+// difieren unas horas, a medianoche la celda quedaría con el día anterior.
 function coerceValue(v) {
   if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
-    return new Date(v + "T00:00:00");
+    return new Date(v + "T12:00:00");
   }
   return v;
 }
