@@ -273,12 +273,13 @@ function getProyectos(ss) {
   }));
 }
 
-// Teléfono, email y observaciones se quedan en la hoja: la app no los usa y
-// con miles de prospectos son la mayor parte del peso de la respuesta.
+// Email y observaciones se quedan en la hoja: la app no los usa y con miles de
+// prospectos pesan. El teléfono sí va (botones de llamar y WhatsApp).
 function getClientes(ss) {
   return leerFilas(ss, SHEETS.CLIENTES, 11).map(r => ({
     id:              r[0],
     nombre:          r[1],
+    telefono:        String(r[2] || ""),
     ciudad:          r[4],
     proyectoInteres: r[5],
     fuente:          r[6],

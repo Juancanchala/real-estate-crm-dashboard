@@ -651,6 +651,20 @@ aside {
 .kb-move button:hover{border-color:var(--blue);color:var(--text);}
 .kb-hint{font-size:11px;color:var(--text3);margin:-6px 0 14px;}
 .kb-card{user-select:none;}
+/* Celular y WhatsApp */
+.tel-fila{display:flex;gap:6px;}
+.tel-fila input{flex:1;min-width:0;}
+.tel-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;flex-shrink:0;border-radius:8px;border:1px solid var(--border2);background:var(--s2);color:var(--text);text-decoration:none;font-size:14px;cursor:pointer;}
+.tel-btn:hover{border-color:var(--blue);}
+.tel-btn.wa{background:#25D366;border-color:#25D366;color:#fff;}
+.tel-btn.wa:hover{background:#1ebe5b;}
+.tel-btn.off{opacity:0.35;pointer-events:none;}
+.wa-mini{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#25D366;color:#fff;vertical-align:middle;margin-left:3px;flex-shrink:0;}
+.wa-mini svg{width:12px;height:12px;}
+.wa-mini:hover{background:#1ebe5b;}
+.kb-acciones{display:inline-flex;align-items:center;gap:6px;}
+.tel-link{color:var(--text2);text-decoration:none;font-size:12px;}
+.tel-link:hover{color:var(--blue);}
 .fila-mas td{text-align:center;padding:14px!important;}
 .fila-mas .btn{display:inline-flex;margin-right:10px;}
 .fila-mas span{font-size:11px;color:var(--text3);}
@@ -876,7 +890,7 @@ aside {
         <div class="tbl-wrap">
           <table class="tbl">
             <thead><tr>
-              <th>Cliente</th><th>Ciudad</th><th>Proyecto Interés</th>
+              <th>Cliente</th><th>Celular</th><th>Ciudad</th><th>Proyecto Interés</th>
               <th>Fuente</th><th>Asesor</th><th>Estado</th>
               <th>F. Contacto</th><th>Próx. Seguimiento</th>
             </tr></thead>
@@ -1405,6 +1419,9 @@ function renderTablaClientes(data) {
   };
   pintarFilas('cli-tbody', data, c=>`<tr>
     <td style="font-weight:600">${c.nombre}</td>
+    <td style="white-space:nowrap">${telValido(c.telefono)
+      ? `<a class="tel-link" href="${linkTel(c.telefono)}" title="Llamar">${telBonito(c.telefono)}</a> ${btnWa(c.telefono, c.nombre)}`
+      : '<span style="color:var(--text3)">—</span>'}</td>
     <td style="color:var(--text2b)">${c.ciudad}</td>
     <td style="color:var(--text2)">${nombreProyecto(c.proyectoInteres)}</td>
     <td style="color:var(--text2b)">${c.fuente}</td>
@@ -1412,7 +1429,7 @@ function renderTablaClientes(data) {
     <td>${badge(c.estado)}</td>
     <td style="color:var(--text3);font-size:11px">${c.fechaContacto}</td>
     <td style="color:var(--text3);font-size:11px">${c.fechaSeguimiento}</td>
-  </tr>`, 8);
+  </tr>`, 9);
 }
 
 function filtrarClientes() {
@@ -1529,6 +1546,54 @@ const COL_PIPE = { etapa:6, probabilidad:8, diasEtapa:11 };
 let kbGuardando = 0;
 
 const nombreProyecto = id => ((DB.proyectos||[]).find(p=>p.id===id)||{}).nombre || id;
+
+// ── CLIENTES: teléfono, WhatsApp y estado sincronizado con su negocio ──
+// Estado del cliente según la etapa de su negocio (mismo mapeo del generador de datos)
+const ESTADO_CLIENTE = {'Prospección':'Nuevo lead','Contacto Inicial':'En contacto','Visita Inmueble':'Visita agendada',
+  'Propuesta Económica':'Propuesta enviada','Negociación':'Negociación','Cierre':'Negociación','Ganado':'Ganado','Perdido':'Perdido'};
+// Índice nombre → cliente, rehecho solo cuando cambia la lista (miles de clientes)
+let _idxClientes = { lista:null, mapa:new Map() };
+function clientePorNombre(nombre) {
+  if (_idxClientes.lista !== DB.clientes) _idxClientes = { lista:DB.clientes, mapa:new Map((DB.clientes||[]).map(c=>[c.nombre,c])) };
+  return _idxClientes.mapa.get(nombre);
+}
+// Celular colombiano: 10 dígitos que empiezan por 3 (se acepta con +57 o espacios)
+const telLimpio = t => String(t||'').replace(/\D/g,'').replace(/^57(?=3\d{9}$)/,'');
+const telValido = t => /^3\d{9}$/.test(telLimpio(t));
+const telBonito = t => { const d = telLimpio(t); return telValido(d) ? `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : (t||''); };
+const linkTel = t => `tel:+57${telLimpio(t)}`;
+const linkWa = t => `https://wa.me/57${telLimpio(t)}`;
+const ICON_WA = `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`;
+// Botón de WhatsApp compacto (tarjetas y tablas); no abre el formulario de la tarjeta
+const btnWa = (tel, nombre) => telValido(tel)
+  ? `<a class="wa-mini" href="${linkWa(tel)}" target="_blank" rel="noopener" title="WhatsApp a ${nombre} · ${telBonito(tel)}" onclick="event.stopPropagation()">${ICON_WA}</a>` : '';
+
+// Escribe en la hoja Clientes los cambios que vienen de un negocio:
+// cliente nuevo → fila nueva; cliente existente → teléfono y/o estado
+async function sincronizarCliente({ nombre, telefono, etapa, proyecto, asesor, fuente, observacion }) {
+  const cli = clientePorNombre(nombre);
+  const estado = etapa ? ESTADO_CLIENTE[etapa] : null;
+  if (cli) {
+    const fila = DB.clientes.indexOf(cli) + 3;
+    const updates = [];
+    if (telefono !== undefined && telLimpio(telefono) !== telLimpio(cli.telefono)) updates.push({ row:fila, col:3, value:telLimpio(telefono) });
+    if (estado && estado !== cli.estado) updates.push({ row:fila, col:9, value:estado });
+    if (!updates.length) return;
+    await escribirSheets({ action:'updateCells', sheet:'CLIENTES', updates });
+    if (telefono !== undefined) cli.telefono = telLimpio(telefono);
+    if (estado) cli.estado = estado;
+    return;
+  }
+  const max = Math.max(0, ...DB.clientes.map(c=>parseInt(String(c.id).replace(/\D/g,''),10)||0));
+  const id = 'CLI-' + String(max+1).padStart(4,'0');
+  const hoy = hoyISO(), seguimiento = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
+  const ciudad = ((DB.proyectos||[]).find(p=>p.id===proyecto)||{}).ciudad || '';
+  // Orden de columnas A–L de la hoja Clientes
+  await escribirSheets({ action:'appendRows', sheet:'CLIENTES', rows:[[
+    id, nombre, telLimpio(telefono), '', ciudad, proyecto, fuente, asesor, estado, hoy, seguimiento, observacion || '' ]] });
+  DB.clientes.push({ id, nombre, telefono:telLimpio(telefono), ciudad, proyectoInteres:proyecto, fuente, asesor, estado,
+    fechaContacto:fechaDeISO(hoy), fechaSeguimiento:fechaDeISO(seguimiento) });
+}
 
 function renderKanban() {
   const pipe = DB.pipeline || [];
@@ -1672,7 +1737,8 @@ function kbCardHTML(p, cerrada) {
     </div>
     <div class="kb-meta" style="margin-top:5px">
       <span class="kb-dias${alerta?' alerta':''}">${cerrada?'Cerrado':(alerta?'⚠ ':'')+p.diasEtapa+' días en la etapa'}</span>
-      <button class="kb-move-btn" onclick="event.stopPropagation();this.closest('.kb-card').classList.toggle('open')">Mover ▾</button>
+      <span class="kb-acciones">${btnWa((clientePorNombre(p.cliente)||{}).telefono, p.cliente)}
+      <button class="kb-move-btn" onclick="event.stopPropagation();this.closest('.kb-card').classList.toggle('open')">Mover ▾</button></span>
     </div>
     <div class="kb-move" onclick="event.stopPropagation()">${ETAPAS.filter(e=>e!==p.etapa).map(e=>`<button onclick="moverNegocio('${p.id}','${e}')">${e}</button>`).join('')}</div>
   </div>`;
@@ -1715,6 +1781,11 @@ async function moverNegocio(id, etapa) {
       { row:fila, col:COL_PIPE.diasEtapa,    value:0 },
     ]});
     toast(`✓ ${neg.cliente} → ${etapa}`, 'ok');
+    // El estado del cliente sigue a su negocio (ej. Ganado → cliente Ganado)
+    if (clientePorNombre(neg.cliente)) {
+      try { await sincronizarCliente({ nombre:neg.cliente, etapa }); }
+      catch (e) { toast(`Negocio guardado, pero no se actualizó el cliente: ${e.message}`, 'err'); }
+    }
   } catch (e) {
     Object.assign(neg, antes);
     toast(`No se pudo guardar: ${e.message}`, 'err');
@@ -1742,6 +1813,8 @@ const hoyISO = () => { const d = new Date(); return `${d.getFullYear()}-${String
 function abrirFormNegocio(id) {
   const neg = id ? DB.pipeline.find(p=>p.id===id) : null;
   const v = neg || { cliente:'', proyecto:'', unidad:'', asesor:'', etapa:'Prospección', valor:0, fechaCierre:'', observacion:'' };
+  const tel = (clientePorNombre(v.cliente)||{}).telefono || '';
+  const fuentes = [...new Set((DB.clientes||[]).map(c=>c.fuente))].filter(Boolean).sort();
   const asesores = [...new Set(DB.pipeline.map(p=>p.asesor))].sort();
   const opt = (val, txt, sel) => `<option value="${val}"${val===sel?' selected':''}>${txt}</option>`;
   const bg = document.createElement('div');
@@ -1756,7 +1829,17 @@ function abrirFormNegocio(id) {
     <div class="form-grid">
       <div class="form-field full"><label>Cliente *</label>
         <input id="f-cliente" list="f-clientes" value="${v.cliente}" placeholder="Nombre del cliente">
-        <datalist id="f-clientes">${(DB.clientes||[]).map(c=>`<option value="${c.nombre}">`).join('')}</datalist></div>
+        <datalist id="f-clientes">${(DB.clientes||[]).map(c=>`<option value="${c.nombre}">`).join('')}</datalist>
+        <span class="form-help" id="f-cliente-nuevo"></span></div>
+      <div class="form-field"><label>Celular</label>
+        <div class="tel-fila">
+          <input id="f-tel" type="tel" inputmode="numeric" value="${telBonito(tel)}" placeholder="Ej: 300 123 4567">
+          <a class="tel-btn" id="f-llamar" title="Llamar">📞</a>
+          <a class="tel-btn wa" id="f-wa" target="_blank" rel="noopener" title="Abrir WhatsApp">${ICON_WA}</a>
+        </div></div>
+      <div class="form-field" id="f-fuente-campo"><label>Fuente del cliente</label>
+        <select id="f-fuente">${fuentes.map(x=>opt(x,x,'')).join('')}</select>
+        <span class="form-help">Solo para clientes nuevos</span></div>
       <div class="form-field"><label>Proyecto *</label>
         <select id="f-proyecto">${neg?'':'<option value="">Selecciona…</option>'}${(DB.proyectos||[]).map(p=>opt(p.id,p.nombre,v.proyecto)).join('')}</select></div>
       <div class="form-field"><label>Unidad</label>
@@ -1781,7 +1864,30 @@ function abrirFormNegocio(id) {
   </div>`;
   document.body.appendChild(bg);
   document.addEventListener('keydown', escCerrarForm);
-  document.getElementById('f-cliente').focus();
+  const inCli = document.getElementById('f-cliente'), inTel = document.getElementById('f-tel');
+  // Al elegir un cliente existente se trae su celular; si no existe, se pide la fuente
+  inCli.addEventListener('input', () => {
+    const c = clientePorNombre(inCli.value.trim());
+    if (c) inTel.value = telBonito(c.telefono);
+    actualizarCamposCliente();
+  });
+  inTel.addEventListener('input', actualizarCamposCliente);
+  actualizarCamposCliente();
+  inCli.focus();
+}
+// Botones de llamar/WhatsApp activos solo con un celular válido; fuente solo para clientes nuevos
+function actualizarCamposCliente() {
+  const nombre = document.getElementById('f-cliente').value.trim();
+  const tel = document.getElementById('f-tel').value;
+  const ok = telValido(tel);
+  [['f-llamar', linkTel(tel)], ['f-wa', linkWa(tel)]].forEach(([idb, href]) => {
+    const a = document.getElementById(idb);
+    a.classList.toggle('off', !ok);
+    if (ok) a.href = href; else a.removeAttribute('href');
+  });
+  const nuevo = nombre && !clientePorNombre(nombre);
+  document.getElementById('f-fuente-campo').style.display = nuevo ? '' : 'none';
+  document.getElementById('f-cliente-nuevo').textContent = nuevo ? 'Cliente nuevo: se agregará a la base de Clientes' : '';
 }
 function escCerrarForm(e) { if (e.key === 'Escape') cerrarFormNegocio(); }
 function cerrarFormNegocio() {
@@ -1796,6 +1902,9 @@ async function guardarNegocio(id) {
   const err = document.getElementById('f-err');
   if (!f.cliente || !f.proyecto || !f.asesor) { err.textContent = 'Completa cliente, proyecto y asesor.'; return; }
   if (!(f.valor > 0)) { err.textContent = 'El valor debe ser mayor a 0.'; return; }
+  const tel = val('f-tel');
+  if (tel && !telValido(tel)) { err.textContent = 'El celular debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567).'; return; }
+  const clienteNuevo = !clientePorNombre(f.cliente);
   const btn = document.getElementById('f-guardar');
   btn.classList.add('loading'); btn.textContent = 'Guardando…'; err.textContent = '';
 
@@ -1817,8 +1926,9 @@ async function guardarNegocio(id) {
         { row:fila, col:COL_PIPE.etapa, value:f.etapa },
         { row:fila, col:COL_PIPE.probabilidad, value:PROB_ETAPA[f.etapa] },
         { row:fila, col:COL_PIPE.diasEtapa, value:0 });
-      if (!cambios.length) { cerrarFormNegocio(); return; }
-      await escribirSheets({ action:'updateCells', sheet:'PIPELINE', updates:cambios });
+      const cambiaTel = !clienteNuevo && telLimpio(tel) !== telLimpio(clientePorNombre(f.cliente).telefono);
+      if (!cambios.length && !cambiaTel && !clienteNuevo) { cerrarFormNegocio(); return; }
+      if (cambios.length) await escribirSheets({ action:'updateCells', sheet:'PIPELINE', updates:cambios });
       if (neg.etapa !== f.etapa) Object.assign(neg, { probabilidad:PROB_ETAPA[f.etapa], diasEtapa:0 });
       Object.assign(neg, { cliente:f.cliente, proyecto:f.proyecto, unidad:f.unidad, asesor:f.asesor, etapa:f.etapa,
         valor:f.valor, fechaCierre:fechaDeISO(f.cierre), observacion:f.observacion });
@@ -1837,6 +1947,11 @@ async function guardarNegocio(id) {
         fechaCierre:fechaDeISO(f.cierre), diasEtapa:0, observacion:f.observacion });
       toast(`✓ ${id} creado para ${f.cliente}`, 'ok');
     }
+    // Hoja Clientes: cliente nuevo → fila nueva; existente → celular y estado al día
+    try {
+      await sincronizarCliente({ nombre:f.cliente, telefono:tel, etapa:f.etapa, proyecto:f.proyecto, asesor:f.asesor,
+        fuente:val('f-fuente'), observacion:f.observacion });
+    } catch (e) { toast(`Negocio guardado, pero no se actualizó el cliente: ${e.message}`, 'err'); }
     cerrarFormNegocio();
   } catch (e) {
     err.textContent = 'No se pudo guardar: ' + e.message;
