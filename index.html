@@ -660,7 +660,10 @@ aside {
 .kb-lista .tbl th:hover{color:var(--text);}
 .kb-lista .tbl tbody tr{cursor:pointer;}
 .kb-lista .tbl td{white-space:nowrap;}
-.kb-etapa-sel{background:var(--s2);border:1px solid var(--border2);border-left:3px solid;color:var(--text);border-radius:6px;padding:4px 8px;font-family:'Outfit',sans-serif;font-size:11.5px;cursor:pointer;outline:none;}
+/* La etapa se ve como etiqueta (igual que en Seg. Negocios); es un select sin apariencia nativa */
+.kb-etapa-sel{appearance:none;-webkit-appearance:none;border:1px solid transparent;cursor:pointer;outline:none;font-family:'Outfit',sans-serif;padding:3px 18px 3px 9px;background-repeat:no-repeat;background-position:right 6px center;background-size:8px;}
+.kb-etapa-sel:hover,.kb-etapa-sel:focus{border-color:currentColor;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");}
+.kb-etapa-sel option{background:var(--s1);color:var(--text);text-transform:none;font-weight:400;}
 .kb-lista-foot{padding:12px 16px;font-size:11.5px;color:var(--text2);border-top:1px solid var(--border);}
 .kb-board.single .kb-col{flex:1 1 auto;max-height:none;}
 .kb-board.single .kb-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));align-content:start;max-height:none;}
@@ -1555,6 +1558,10 @@ function ordenarLista(campo) {
   renderKanban();
 }
 
+// Mismas clases de etiqueta que la tabla de Seg. Negocios
+const BADGE_ETAPA = {'Ganado':'b-ganado','Perdido':'b-perdido','Negociación':'b-negociacion','Cierre':'b-cierre',
+  'Propuesta Económica':'b-propuesta','Visita Inmueble':'b-visita','Contacto Inicial':'b-contacto','Prospección':'b-prospeccion'};
+
 const COLS_LISTA = [
   { campo:'id', txt:'ID' }, { campo:'cliente', txt:'Cliente' }, { campo:'proyecto', txt:'Proyecto' },
   { campo:'asesor', txt:'Asesor' }, { campo:'etapa', txt:'Etapa' }, { campo:'valor', txt:'Valor' },
@@ -1586,7 +1593,7 @@ function renderListaNegocios(items) {
       <td style="color:var(--text2b)">${nombreProyecto(p.proyecto)}${p.unidad?' · '+p.unidad:''}</td>
       <td style="color:var(--text2)">${p.asesor}</td>
       <td onclick="event.stopPropagation()">
-        <select class="kb-etapa-sel" style="border-left-color:${ETAPA_C[p.etapa]}" onchange="moverNegocio('${p.id}',this.value)">
+        <select class="badge kb-etapa-sel ${BADGE_ETAPA[p.etapa]||''}" title="Cambiar etapa" onchange="moverNegocio('${p.id}',this.value)">
           ${ETAPAS.map(e=>`<option${e===p.etapa?' selected':''}>${e}</option>`).join('')}
         </select></td>
       <td style="font-family:'Syne',sans-serif;font-size:12px;color:var(--tx-blue)">${cop(p.valor)}</td>
