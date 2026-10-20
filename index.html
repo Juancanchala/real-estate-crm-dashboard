@@ -749,7 +749,7 @@ aside {
     </div>
     <div class="topbar-right">
       <button class="btn btn-ghost" onclick="toggleTheme()" id="theme-toggle" title="Cambiar tema claro/oscuro" style="padding:9px 11px">☀️</button>
-      <button class="btn btn-ghost" onclick="loadData()" id="btn-refresh">
+      <button class="btn btn-ghost" onclick="loadData(true)" id="btn-refresh">
         ↻ Actualizar
       </button>
     </div>
@@ -1163,11 +1163,11 @@ const fmtM = n => (n/1000000).toFixed(1)+'M';
 const pct = (a,b) => b>0 ? Math.round(a/b*100) : 0;
 
 // ── LOAD DATA ──
-async function loadData() {
+async function loadData(fresco) {
   const btn = document.getElementById('btn-refresh');
   btn.classList.add('loading'); btn.textContent = '↻ Cargando...';
   try {
-    const res = await fetch(API);
+    const res = await fetch(fresco ? API + "?fresh=1" : API); // "Actualizar" salta la caché del API
     const data = await res.json();
     if(data.error) throw new Error(data.error);
     DB = data;

@@ -1,2 +1,5 @@
 # Local Netlify folder
 .netlify
+
+# Datos generados: se reproducen con python database/generar_datos.py
+database/generado/
