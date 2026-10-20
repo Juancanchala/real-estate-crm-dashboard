@@ -2158,7 +2158,7 @@ function esReporteGeneral(pregunta) {
 
 // Pide tablas, meses o proyecciones: necesita más espacio que una respuesta de 1-2 frases
 function esConsultaTabular(pregunta) {
-  return /tabla|por mes|mensual|meses|proyecci|tendencia|por asesor|por proyecto|cartera|mora|20\d\d/i.test(pregunta || '');
+  return /tabla|por mes|mensual|meses|trimestre|semestre|compar|proyecci|tendencia|por asesor|por proyecto|cartera|mora|20\d\d/i.test(pregunta || '');
 }
 
 // Datos para Aura, tomados de las hojas 📊 de resumen del Sheets (fórmulas QUERY).
@@ -2185,6 +2185,7 @@ function datosDetalle(pregunta) {
 
   const porAnio = agrupar(ventas, r => r['Año'] === 2026 ? '2026 (ene–jun)' : String(r['Año']));
   const porSem = agrupar(ventas, r => `${r['Año']}-S${r.Mes <= 6 ? 1 : 2}`);
+  const porTrim = agrupar(ventas, r => `${r['Año']}-T${Math.ceil(r.Mes / 3)}`);
   const anios = [...new Set(ventas.map(r=>r['Año']))];
   const porProyAnio = anios.map(y => `${y}: ` + linea(agrupar(ventas.filter(r=>r['Año']===y), r=>nombreProyecto(r.Proyecto)))).join('\n');
   const porAsesorAnio = anios.map(y => `${y}: ` + linea(agrupar(ventas.filter(r=>r['Año']===y), r=>r.Asesor))).join('\n');
@@ -2233,6 +2234,7 @@ Por proyecto: ${Object.entries(proy3).sort((a,b)=>b[1].v-a[1].v).map(([n,x])=>`$
 
 VENTAS POR AÑO: ${linea(porAnio, cronologico)}
 VENTAS POR SEMESTRE: ${linea(porSem, cronologico)}
+VENTAS POR TRIMESTRE (T1 = ene–mar, T2 = abr–jun, T3 = jul–sep, T4 = oct–dic): ${linea(porTrim, cronologico)}
 VENTAS POR MES: ${mensual}
 
 VENTAS POR PROYECTO Y AÑO:
@@ -2302,7 +2304,7 @@ ${reglaTabla}
 
   const hoy = new Date().toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric' });
   return `Fecha de hoy: ${hoy}.
-Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). REGLA CRÍTICA: usa ÚNICAMENTE las cifras que aparecen textualmente en los datos de abajo. Si te piden un dato que no está ahí (ej. un valor en dinero que no se lista), dilo explícitamente ("no tengo ese dato exacto") en vez de calcularlo, estimarlo o inventarlo. Nunca inventes cifras. Para proyecciones usa SOLO la sección PROYECCIÓN (ya calculada), di que es una estimación y en qué meses se basa. Los datos tienen fecha de corte (ver RANGO DE DATOS): si piden "los últimos meses", "este año" o un periodo posterior al corte, aclara la fecha de corte y responde con los meses más recientes que sí tienen datos. Nunca supongas que un mes sin datos tuvo cero ventas si es posterior al corte. Las cifras de VENTAS son datos reales registrados: solo la sección PROYECCIÓN es una estimación. Datos en tiempo real:
+Eres Aura, la asistente experta en CRM inmobiliario de D'LOGIA. Responde siempre en español, con lenguaje comercial y sencillo: di "prospecto" (nunca "lead") y "proceso de venta" o "negocios en curso" (nunca "pipeline"). REGLA CRÍTICA: usa ÚNICAMENTE las cifras que aparecen textualmente en los datos de abajo. Si te piden un dato que no está ahí (ej. un valor en dinero que no se lista), dilo explícitamente ("no tengo ese dato exacto") en vez de calcularlo, estimarlo o inventarlo. Nunca inventes cifras. Para proyecciones usa SOLO la sección PROYECCIÓN (ya calculada), di que es una estimación y en qué meses se basa. Los datos tienen fecha de corte (ver RANGO DE DATOS): si piden "los últimos meses", "este año" o un periodo posterior al corte, aclara la fecha de corte y responde con los meses más recientes que sí tienen datos. Nunca supongas que un mes sin datos tuvo cero ventas si es posterior al corte. Las cifras de VENTAS son datos reales registrados: solo la sección PROYECCIÓN es una estimación. NUNCA sumes ni restes cifras tú mismo: para años, semestres y trimestres usa los totales ya calculados. Si piden un periodo que no está calculado (ej. dos meses sueltos), muestra los meses por separado sin dar un total. Datos en tiempo real:
 
 ${datos}
 
